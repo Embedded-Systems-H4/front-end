@@ -4,11 +4,12 @@ import { theme } from '@theme/theme'
 import type { AppProps } from 'next/app'
 import Head from "next/head"
 import './global.css'
+import { SessionProvider } from "next-auth/react"
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
   return (
-    <>
+    <SessionProvider session={session}>
       <Head>
         <link rel="icon" href="/favicon.png" />
         <title>Embedded-Systems-H4</title>
@@ -19,6 +20,6 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
           <Component {...pageProps} />
         </Layout>
       </ChakraProvider>
-    </>
+    </SessionProvider>
   )
 }

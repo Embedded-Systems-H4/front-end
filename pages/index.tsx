@@ -1,24 +1,14 @@
 import { LogoIcon } from "@assets/Logo";
 import { Box, chakra } from "@chakra-ui/react";
 import type { NextPage } from "next";
-import { useEffect, useState } from "react";
+import { LoginButton } from "@components/login-btn"
 const Home: NextPage = () => {
-  const [count, setCount] = useState(10)
-
-  useEffect(() => {
-    if (count < 1) {
-      setCount(10)
-    }
-    setTimeout(() => {
-      setCount(count - 1)
-    }, 1000)
-  }, [count])
 
   return (
     <Box px={10}>
       <LogoIcon />
       <chakra.span>
-        {count}
+        <LoginButton />
       </chakra.span>
     </Box>
   );
