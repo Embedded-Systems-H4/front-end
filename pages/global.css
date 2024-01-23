@@ -1,0 +1,6 @@
+html {
+  background-color: #000000;
+  background-image: radial-gradient(#123399, #001530, #000000, #000000);
+  background-repeat: no-repeat;
+  height: 100vh;
+}
