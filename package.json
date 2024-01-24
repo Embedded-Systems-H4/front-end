@@ -15,7 +15,7 @@
     "@chakra-ui/system": "^2.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@fontsource-variable/inter": "^5.0.8",
+    "@fontsource-variable/inter": "^5.0.16",
     "@fontsource/rajdhani": "^5.0.8",
     "@jridgewell/sourcemap-codec": "^1.4.15",
     "@types/react": "18.2.20",

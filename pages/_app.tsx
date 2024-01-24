@@ -5,6 +5,7 @@ import type { AppProps } from 'next/app'
 import Head from "next/head"
 import './global.css'
 import { SessionProvider } from "next-auth/react"
+import { Navbar } from "@components/Navbar/Navbar"
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 
@@ -17,9 +18,10 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
 
       <ChakraProvider theme={theme}>
         <Layout>
+          <Navbar />
           <Component {...pageProps} />
         </Layout>
       </ChakraProvider>
-    </SessionProvider>
+    </SessionProvider >
   )
 }

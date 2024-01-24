@@ -1,6 +1,9 @@
 html {
-  background-color: #000000;
-  background-image: radial-gradient(#123399, #001530, #000000, #000000);
+  background-color: var(--chakra-ui-colors-gray-800);
   background-repeat: no-repeat;
   height: 100vh;
+}
+
+body {
+  font-family: 'Inter Variable', sans-serif;
 }

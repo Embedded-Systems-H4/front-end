@@ -3,7 +3,7 @@
  * https://chakra-ui.com/docs/styled-system/theming/theme
  */
 import { extendTheme } from "@chakra-ui/react"
-
+import "./foundations/fonts"
 // Foundational style overrides
 import { colors } from "./foundations/colors"
 import { typography } from "./foundations/typography"

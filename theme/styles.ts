@@ -4,10 +4,12 @@ import { textSpecs, typography } from "./foundations/typography"
 const styles: Styles = {
   global: {
     html: {
+      fontFamily: "Inter Variable",
       fontSize: textSpecs.base.fontSize,
       scrollBehavior: "smooth"
     },
     body: {
+      fontFamily: "Inter Variable",
       color: typography.fontColors.base,
       bg: "transparent",
     },

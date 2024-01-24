@@ -19,11 +19,14 @@ export const authOptions = {
             account: Account | null
             profile?: Profile
         }) {
-            console.log(profile)
-            if (user.email === "danimane4info@gmail.com") {
+            const allowedEmails: string[] = [
+                "danimane4info@gmail.com",
+                "vados1789@gmail.com"
+            ]
+            if (allowedEmails.includes(user?.email as string)) {
                 return true;
             } else {
-                return 'https://disney.com'
+                return '/login?error=permissionDenied'
             }
         },
         async session({ session, token }: { session: any, token: any }) {

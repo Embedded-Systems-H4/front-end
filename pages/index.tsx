@@ -1,16 +1,14 @@
-import { LogoIcon } from "@assets/Logo";
-import { Box, chakra } from "@chakra-ui/react";
+import { HStack, VStack } from "@chakra-ui/react";
+import { DeviceList } from "@components/DeviceList";
 import type { NextPage } from "next";
-import { LoginButton } from "@components/login-btn"
 const Home: NextPage = () => {
 
   return (
-    <Box px={10}>
-      <LogoIcon />
-      <chakra.span>
-        <LoginButton />
-      </chakra.span>
-    </Box>
+    <VStack ml={{ base: 0, md: 60 }} p="4">
+      <HStack w={'100%'} h={'100%'}>
+        <DeviceList />
+      </HStack>
+    </VStack>
   );
 };
 
