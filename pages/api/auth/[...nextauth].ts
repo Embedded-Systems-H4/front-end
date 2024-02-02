@@ -40,12 +40,13 @@ export const authOptions = {
     session: {
         maxAge: 3600,
     },
+    
+
     cookies: {
         state: {
             name: `web_next-auth.state`,
             options: {
                 httpOnly: true,
-                sameSite: "lax",
                 path: "/",
                 secure: true,
                 maxAge: 3600

@@ -5,7 +5,7 @@ import io, { Socket } from 'socket.io-client';
 
 const Home: NextPage = () => {
   const [messages, setMessages] = useState<string[]>([]);
-  let socket: Socket;
+  let socket: any;
 
   const socketInitializer = async () => {
     await fetch('/api/socket', {
@@ -41,7 +41,7 @@ const Home: NextPage = () => {
         socket.disconnect();
       }
     };
-  }, []); // Empty dependency array means this effect runs once after initial render
+  }, [socket]);
 
   return (
     <VStack ml={{ base: 0, md: 60 }} p="4">
