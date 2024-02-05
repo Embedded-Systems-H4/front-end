@@ -24,7 +24,7 @@ export const authOptions = {
                 "vados1789@gmail.com"
             ]
             if (allowedEmails.includes(user?.email as string)) {
-                return true;
+                return true
             } else {
                 return '/login?error=permissionDenied'
             }
@@ -32,7 +32,7 @@ export const authOptions = {
         async session({ session, token }: { session: any, token: any }) {
             session.user.id = token?.sub;
             return session;
-        },
+        }
     },
     pages: {
         signIn: '/login'
@@ -40,19 +40,39 @@ export const authOptions = {
     session: {
         maxAge: 3600,
     },
-    
-
     cookies: {
-        state: {
-            name: `web_next-auth.state`,
-            options: {
-                httpOnly: true,
-                path: "/",
-                secure: true,
-                maxAge: 3600
-            },
-        },
-    }
+        // sessionToken: {
+        //   name: `__Secure-next-auth.session-token`,
+        //   options: {
+        //     httpOnly: true,
+        //     path: '/',
+        //     secure: true
+        //   }
+        // },
+        // callbackUrl: {
+        //   name: `__Secure-next-auth.callback-url`,
+        //   options: {
+        //     path: '/',
+        //     secure: true
+        //   }
+        // },
+        // csrfToken: {
+        //   name: `__Host-next-auth.csrf-token`,
+        //   options: {
+        //     httpOnly: true,
+        //     path: '/',
+        //     secure: true
+        //   }
+        // },
+        // pkceCodeVerifier: {
+        //   name: `H4_next-auth.pkce.code_verifier`,
+        //   options: {
+        //     httpOnly: true,
+        //     path: '/',
+        //     secure: true
+        // }
+        // }
+      }
 };
 
 export default NextAuth(authOptions);

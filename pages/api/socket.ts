@@ -1,5 +1,5 @@
-import { Server } from 'socket.io';
 import * as mqtt from 'mqtt';
+import { Server } from 'socket.io';
 
 const SocketHandler = (req: any, res: any) => {
   const topic = req.headers.topic
@@ -11,7 +11,7 @@ const SocketHandler = (req: any, res: any) => {
     res.socket.server.io = io;
 
     // MQTT Connection
-    const mqttClient = mqtt.connect('mqtt://10.71.202.219');
+    const mqttClient = mqtt.connect('mqtt://mqtt-broker');
 
     mqttClient.on('connect', () => {
       console.log('MQTT connected');
