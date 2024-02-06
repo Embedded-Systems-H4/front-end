@@ -11,7 +11,12 @@ const SocketHandler = (req: any, res: any) => {
     res.socket.server.io = io;
 
     // MQTT Connection
-    const mqttClient = mqtt.connect('mqtt://mqtt-broker');
+    const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST}`, {
+      username: process.env.MQTT_USERNAME,
+      password: process.env.MQTT_PASSWORD,
+      port: parseInt(process.env.MQTT_PORT as string),
+      clientId: "front-end"
+    });
 
     mqttClient.on('connect', () => {
       console.log('MQTT connected');
@@ -26,20 +31,20 @@ const SocketHandler = (req: any, res: any) => {
       io.emit('mqttMessage', { topic, message: messageData });
     });
 
-    // Handling Socket.io connections
-    io.on('connection', (socket) => {
-      console.log('Socket.io client connected');
+    // // Handling Socket.io connections
+    // io.on('connection', (socket) => {
+    //   console.log('Socket.io client connected');
 
-      // Example: Send a Socket.io message when a new MQTT message is received
-      mqttClient.on('message', (topic, message) => {
-        socket.emit('mqttMessage', { topic, message: message.toString() });
-      });
+    //   // Example: Send a Socket.io message when a new MQTT message is received
+    //   mqttClient.on('message', (topic, message) => {
+    //     socket.emit('mqttMessage', { topic, message: message.toString() });
+    //   });
 
-      // Handle Socket.io disconnections
-      socket.on('disconnect', () => {
-        console.log('Socket.io client disconnected');
-      });
-    });
+    //   // Handle Socket.io disconnections
+    //   socket.on('disconnect', () => {
+    //     console.log('Socket.io client disconnected');
+    //   });
+    // });
   }
 
   res.end();

@@ -42,6 +42,9 @@
       "@database/*": [
         "./database/*"
       ],
+      "@models/*": [
+        "./models/*"
+      ],
     },
     "forceConsistentCasingInFileNames": true
   },

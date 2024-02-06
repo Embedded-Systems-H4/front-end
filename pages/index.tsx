@@ -1,58 +1,38 @@
-import { HStack, VStack, Text } from "@chakra-ui/react";
+import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
+import { DeviceList } from "@components/DeviceList";
+import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
 import type { NextPage } from "next";
-import { useEffect, useState } from "react";
-import io, { Socket } from 'socket.io-client';
+import { MdAddToPhotos } from "react-icons/md";
 
 const Home: NextPage = () => {
-  const [messages, setMessages] = useState<string[]>([]);
-  let socket: any;
-
-  const socketInitializer = async () => {
-    await fetch('/api/socket', {
-      headers: {
-        topic: "sensor_data_topic"
-      }
-    });
-    socket = io();
-
-    socket.on('connect', () => {
-      console.log('connected');
-    });
-
-    // Listen for 'mqttMessage' events from the server
-    socket.on('mqttMessage', (data: { topic: string, message: string }) => {
-      // Update messages state with the new message
-      setMessages([data.message]);
-    });
-  };
-
-  useEffect(() => {
-    // Ensure the socketInitializer is async, and handle Promise<void> properly
-    const initializeSocket = async () => {
-      await socketInitializer();
-    };
-
-    initializeSocket();
-
-    // Cleanup function (optional)
-    return () => {
-      // Disconnect or perform any cleanup if needed
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-  }, [socket]);
-
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return (
-    <VStack ml={{ base: 0, md: 60 }} p="4">
-      <HStack w={'100%'} h={'100%'}>
-        <VStack>
-          {messages.map((message, index) => (
-            <Text key={index}>{message}</Text>
-          ))}
-        </VStack>
-      </HStack>
-    </VStack>
+    <>
+      <RoleManagementModal isOpen={isOpen} onClose={onClose} />
+      <VStack ml={{ base: 0, md: 60 }} p="4">
+        <HStack w={"100%"} h={"100%"}>
+          <VStack w={"100%"}>
+            <HStack p={2} bgColor={"gray.700"} w={"100%"} borderRadius={"md"}>
+              <Button
+                size={"sm"}
+                borderRadius={"md"}
+                bgColor={"blue.400"}
+                leftIcon={<MdAddToPhotos />}
+                _hover={{
+                  bgColor: "blue.500",
+                }}
+                onClick={() => {
+                  onOpen();
+                }}
+              >
+                Create new role
+              </Button>
+            </HStack>
+            <DeviceList />
+          </VStack>
+        </HStack>
+      </VStack>
+    </>
   );
 };
 
