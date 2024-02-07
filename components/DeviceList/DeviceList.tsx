@@ -14,7 +14,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { DateElement } from "@components/Date/Date";
-// import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
+import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
 import { Door } from "@models/Door";
 import { useMQTT } from "@utils/useMQTT";
 import { useCallback, useEffect, useState } from "react";
@@ -50,7 +50,11 @@ export const DeviceList = () => {
 
   return (
     <>
-
+  <RoleManagementModal
+    isOpen={isOpen}
+    onClose={onClose}
+    deviceId={contextId as string}
+  />
       <Accordion w={"100%"} allowToggle>
         {deviceList.map((device: Door) => (
           <AccordionItem

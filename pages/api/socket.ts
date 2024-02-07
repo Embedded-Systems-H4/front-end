@@ -30,21 +30,6 @@ const SocketHandler = (req: any, res: any) => {
       // Broadcast the MQTT message to all connected Socket.io clients
       io.emit('mqttMessage', { topic, message: messageData });
     });
-
-    // // Handling Socket.io connections
-    // io.on('connection', (socket) => {
-    //   console.log('Socket.io client connected');
-
-    //   // Example: Send a Socket.io message when a new MQTT message is received
-    //   mqttClient.on('message', (topic, message) => {
-    //     socket.emit('mqttMessage', { topic, message: message.toString() });
-    //   });
-
-    //   // Handle Socket.io disconnections
-    //   socket.on('disconnect', () => {
-    //     console.log('Socket.io client disconnected');
-    //   });
-    // });
   }
 
   res.end();

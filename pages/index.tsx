@@ -1,6 +1,5 @@
 import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
 import { DeviceList } from "@components/DeviceList";
-// import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
 import type { NextPage } from "next";
 import { MdAddToPhotos } from "react-icons/md";
 
