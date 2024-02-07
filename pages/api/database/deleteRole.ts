@@ -18,38 +18,32 @@ export default async function handler(
     res: NextApiResponse
 ) {
     const { name, color } = JSON.parse(req.body)
-    async function saveRole() {
+    async function deleteRole() {
         try {
             const db = database("MAIN");
-            const collection = db.collection('roles');
-            const query = await collection.updateOne(
-                {
-                    "name": name
-                },
-                {
-                    "$set": {
-                        name: name,
-                        color: color
-                    }
-                },
-                {
-                    upsert: true
-                }
-            )
-            if (query?.acknowledged) {
-                return {
-                    name: name,
-                    color: color
-                }
+
+            // Delete from 'roles' collection
+            const rolesCollection = db.collection('roles');
+            const rolesQuery = await rolesCollection.deleteOne({ "name": name });
+
+            // Delete from 'devices' collection
+            const devicesCollection = db.collection('devices');
+            const devicesQuery = await devicesCollection.updateMany(
+                { "allowedRoles": name },
+                { $pull: { "allowedRoles": name } }
+            );
+
+            if (rolesQuery?.acknowledged && devicesQuery?.acknowledged) {
+                return { name: name };
             }
         } catch (error) {
             console.log(error);
-            return new CustomError("Unable to save role", 500)
+            return new CustomError("Unable to delete role", 500)
         }
     }
 
     try {
-        const response = await saveRole()
+        const response = await deleteRole()
         if (response instanceof CustomError) {
             res.status(response.code).json({
                 error: { message: response.message, code: response.code }
@@ -61,6 +55,6 @@ export default async function handler(
         }
     } catch (error) {
         console.log(error);
-        return new CustomError("Unable to save role", 500)
+        return new CustomError("Unable to delete role", 500)
     }
 }

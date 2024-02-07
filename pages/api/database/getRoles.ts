@@ -17,15 +17,16 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
+    const { name } = req.headers
     async function getRoles() {
         try {
             const db = database("MAIN");
             const collection = db.collection('roles');
             const documentsCursor = collection.aggregate([
                 {
-                    $sort: {
-                        lastUpdatedAt: -1,
-                    },
+                    $match: {
+                        name: { $exists: true, $ne: null } // Filter documents where the 'name' field exists and is not null
+                    }
                 }
             ]);
             const roleList = await documentsCursor.toArray()
@@ -33,11 +34,11 @@ export default async function handler(
             if (roleList.length > 0) {
                 return roleList;
             } else {
-                return new CustomError("No devices found", 404)
+                return new CustomError("No roles found", 404)
             }
         } catch (error) {
             console.log(error);
-            return new CustomError("Unable to fetch devices", 500)
+            return new CustomError("Unable to fetch roles", 500)
         }
     }
 
@@ -54,6 +55,6 @@ export default async function handler(
         }
     } catch (error) {
         console.log(error);
-        return new CustomError("Unable to fetch devices", 500)
+        return new CustomError("Unable to fetch roles", 500)
     }
 }

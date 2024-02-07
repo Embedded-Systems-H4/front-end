@@ -1,11 +1,11 @@
 import { hookstate } from '@hookstate/core';
 
-import { Device } from '@models/Device';
+import { Door } from '@models/Door';
 
-const deviceListState = hookstate<Device[]>([]);
+export const deviceListState = hookstate<Door[]>([]);
 
-export const getDeviceList = () => deviceListState.get();
+export const getDeviceList = () => deviceListState.get({ noproxy: true });
 
 export const getDeviceById = (id: string) => deviceListState.get({ noproxy: true }).filter((device) => device.id === id)[0]
 
-export const setDeviceList = (newDeviceList: Device[]) => deviceListState.set(newDeviceList);
+export const setDeviceList = (newDeviceList: Door[]) => deviceListState.set(newDeviceList);

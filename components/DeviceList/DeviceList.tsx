@@ -16,19 +16,21 @@ import {
 import { DateElement } from "@components/Date/Date";
 import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
 import { Door } from "@models/Door";
+import { setDeviceList } from "@utils/deviceList";
 import { useMQTT } from "@utils/useMQTT";
 import { useCallback, useEffect, useState } from "react";
 import { FaLock, FaUserPlus } from "react-icons/fa6";
 import { TbWifiOff } from "react-icons/tb";
 export const DeviceList = () => {
-  const [deviceList, setDeviceList] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [contextId, setContextId] = useState<string | null>(null);
+  const [devices, setDevices] = useState<Door[]>([]);
 
   const getDevices = useCallback(async () => {
-    const res = await fetch(`/api/database/getDevices`);
+    const res = await fetch(`/api/database/getDevices`, {});
     const data = await res.json();
     if (data?.devices) {
+      setDevices(data.devices);
       setDeviceList(data.devices);
     }
   }, []);
@@ -50,13 +52,14 @@ export const DeviceList = () => {
 
   return (
     <>
-  <RoleManagementModal
-    isOpen={isOpen}
-    onClose={onClose}
-    deviceId={contextId as string}
-  />
+      <RoleManagementModal
+        isOpen={isOpen}
+        onClose={onClose}
+        deviceId={contextId as string}
+        context="manage"
+      />
       <Accordion w={"100%"} allowToggle>
-        {deviceList.map((device: Door) => (
+        {devices?.map((device) => (
           <AccordionItem
             key={device.id}
             border={"1px"}

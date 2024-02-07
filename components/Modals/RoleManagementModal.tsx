@@ -1,8 +1,13 @@
 import {
   Badge,
+  Box,
   Button,
   Divider,
+  Flex,
+  FormControl,
+  FormLabel,
   HStack,
+  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -10,41 +15,123 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Stack,
   Tag,
   TagLabel,
-  TagLeftIcon,
+  Tooltip,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { chakra } from "@chakra-ui/system";
-import { Door } from "@models/Door";
-import { deviceListState } from "@utils/deviceList";
-import { roleListState } from "@utils/roleList";
-import { useCallback } from "react";
-
-export const RoleManagementModal = async ({
+import { RadioCardGroup } from "@components/RadioCardGroup/RadioCardGroup";
+import { Role } from "@models/Role";
+import { getDeviceById } from "@utils/deviceList";
+import { mergeRole, setRoleList } from "@utils/roleList";
+import { useCallback, useEffect, useState } from "react";
+import { FaX } from "react-icons/fa6";
+import { useDebounce } from "react-use";
+export const RoleManagementModal = ({
   isOpen,
   onClose,
   deviceId,
+  context,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  context: "manage" | "create";
   deviceId?: string;
 }) => {
-  const device = await deviceListState.get({noproxy: true}) as Door[]
-  const roles = roleListState.get({noproxy: true})
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const device = getDeviceById(deviceId as string);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const rolesPresence = roles?.length > 0 && device?.allowedRoles;
+  const [input, setInput] = useState<string | null>(null);
+  const rolesSlice = roles.slice(4);
+  const { isOpen: isTagTooltipOpen, onToggle: tagTooltipToggle } =
+    useDisclosure();
 
-  const saveRole = useCallback(async () => {
-    const res = await fetch(`/api/database/saveRole`, {
-      body: JSON.stringify({
-        id: "",
-        name: "",
-      }),
-    });
+  const getRoles = useCallback(async () => {
+    const res = await fetch("/api/database/getRoles", {});
     const data = await res.json();
-    if (data?.role) {
-      roleListState.merge([data.role])
+    if (data?.roles) {
+      setRoles(data?.roles);
+      setRoleList(data?.roles);
     }
   }, []);
+
+  useEffect(() => {
+    getRoles();
+  }, [getRoles]);
+
+  const checkRoles = useCallback(async () => {
+    const res = await fetch(`/api/database/getRoles`, {
+      method: "GET",
+      headers: {
+        name: input?.toUpperCase() as string,
+      },
+    });
+    const data = await res.json();
+    const roles = data.roles;
+
+    setRoles(roles || []);
+  }, [input]);
+
+  useEffect(() => {
+    checkRoles();
+  }, [checkRoles]);
+
+  useDebounce(
+    () => {
+      setInput(input);
+    },
+    500,
+    [input]
+  );
+
+  const saveRole = useCallback(
+    async ({ name, color }: { name: string; color: string }) => {
+      const res = await fetch(`/api/database/saveRole`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name,
+          color: color,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        console.log(data.error);
+      }
+      const role = data?.role;
+      if (role) {
+        mergeRole(role);
+        checkRoles();
+      }
+    },
+    [checkRoles]
+  );
+
+  const deleteRole = useCallback(
+    async ({ name }: { name: string }) => {
+      const res = await fetch(`/api/database/deleteRole`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        console.log(data.error);
+      }
+      const role = data?.role;
+      if (role) {
+        checkRoles();
+      }
+    },
+    [checkRoles]
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -58,7 +145,7 @@ export const RoleManagementModal = async ({
             device?.allowedRoles?.length > 0 && (
               <>
                 <chakra.span>Current roles</chakra.span>
-                <HStack spacing={4}>
+                <HStack spacing={4} my={1} mb={4}>
                   <Stack
                     direction="column"
                     bgColor={"gray.800"}
@@ -68,7 +155,7 @@ export const RoleManagementModal = async ({
                     <chakra.span>Roles with access</chakra.span>
                     <Divider borderColor={"gray.500"} />
                     <HStack>
-                      {device.allowedRoles?.map((role: any) => {
+                      {device.allowedRoles?.map((role: Role) => {
                         return (
                           <>
                             <Badge>{role.name}</Badge>
@@ -80,28 +167,193 @@ export const RoleManagementModal = async ({
                 </HStack>
               </>
             )}
-          <chakra.span>Avalible roles</chakra.span>
-          <HStack spacing={4}>
-            {roles?.map((role) => (
-              <Tag
-                size={"md"}
-                key={role.id}
-                variant="subtle"
-                colorScheme="cyan"
-              >
-                <TagLeftIcon boxSize="12px" />
-                <TagLabel>Cyan</TagLabel>
-              </Tag>
-            ))}
-          </HStack>
+          {roles?.length > 0 && (
+            <Box
+              borderRadius={"md"}
+              border={"1px"}
+              fontSize={"sm"}
+              borderColor={"gray.500"}
+              pt={3}
+              px={3}
+            >
+              <chakra.span fontSize={"sm"} fontWeight={"bold"}>
+                Manage roles
+              </chakra.span>
+              <Divider />
+              <HStack spacing={1} my={1} mb={8}>
+                {roles.slice(0, 4).map((role: Role, index: number) => (
+                  <Tag
+                    key={index}
+                    variant="subtle"
+                    size={"sm"}
+                    bgColor={`${role.color}.200`}
+                    color={`${role.color}.700`}
+                    userSelect={"none"}
+                    my={0.5}
+                    mx={0.5}
+                  >
+                    <HStack h={"100%"} w={"100%"}>
+                      <Tooltip label={role.name}>
+                        <TagLabel>{role.name}</TagLabel>
+                      </Tooltip>
+                      <FaX
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                        }}
+                        cursor={"pointer"}
+                        onClick={() => deleteRole({ name: role.name })}
+                      />
+                    </HStack>
+                  </Tag>
+                ))}
+                {roles.length > 4 && (
+                  <Popover>
+                    <PopoverTrigger>
+                      <Button
+                        variant="subtle"
+                        h={"22px"}
+                        w={"80px"}
+                        fontSize={"xs"}
+                        borderRadius={"md"}
+                        cursor={"pointer"}
+                        userSelect={"none"}
+                        bgColor={"gray.700"}
+                      >
+                        <chakra.span color={"white"} px={2}>
+                          +{roles.length - 4} more
+                        </chakra.span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      zIndex={"popiver"}
+                      bgColor={"gray.700"}
+                      border={0}
+                      fontSize={"sm"}
+                    >
+                      <PopoverBody>
+                        <Flex flexWrap="wrap">
+                          {rolesSlice.map((role, index) => (
+                            <Tag
+                              key={index}
+                              variant="subtle"
+                              size={"sm"}
+                              colorScheme={`${role.color}.200`}
+                              userSelect={"none"}
+                              my={0.5}
+                              mx={0.5}
+                            >
+                              <TagLabel>
+                                <HStack>
+                                  <chakra.span>{role.name}</chakra.span>
+                                  <FaX
+                                    style={{
+                                      width: "10px",
+                                      height: "10px",
+                                    }}
+                                    cursor={"pointer"}
+                                    onClick={() =>
+                                      deleteRole({ name: role.name })
+                                    }
+                                  />
+                                </HStack>
+                              </TagLabel>
+                            </Tag>
+                          ))}
+                        </Flex>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </HStack>
+            </Box>
+          )}
+
+          {/* {!rolesPresence && context === "manage" && (
+            <HStack
+              spacing={4}
+              fontSize={"sm"}
+              bgColor={"gray.700"}
+              p={2}
+              my={1}
+              mb={4}
+              borderRadius={"md"}
+            >
+              <chakra.span>
+                No roles avalible, please create a role.
+              </chakra.span>
+            </HStack>
+          )} */}
+
+          {context === "create" && (
+            <Box
+              borderRadius={"md"}
+              border={"1px"}
+              borderColor={"gray.500"}
+              my={3}
+              py={3}
+              px={3}
+            >
+              <chakra.span fontSize={"sm"} fontWeight={"bold"}>
+                Create roles
+              </chakra.span>
+              <Divider />
+              <FormControl isRequired mt={4}>
+                <FormLabel fontSize={"sm"} fontWeight={"normal"}>
+                  Name
+                </FormLabel>
+                <HStack spacing={0}>
+                  <Input
+                    onChange={(e) => {
+                      setInput(e?.target?.value);
+                    }}
+                    placeholder="Fx: Developer"
+                    bgColor={"gray.700"}
+                    borderColor={"gray.500"}
+                    borderRadius={"md"}
+                    size={"sm"}
+                  />
+                </HStack>
+                <FormLabel mt={4} fontSize={"sm"} fontWeight={"normal"}>
+                  Color
+                </FormLabel>
+                <HStack justifyContent={"space-between"}>
+                  <RadioCardGroup
+                    options={["red", "green", "blue", "yellow"]}
+                    setSelectedOption={setSelectedOption}
+                  />
+                  <Button
+                    bgColor={"blue.400"}
+                    borderRadius={"md"}
+                    size={"sm"}
+                    isDisabled={!input || !selectedOption}
+                    onClick={() => {
+                      saveRole({
+                        name: input?.toUpperCase() as string,
+                        color: selectedOption as string,
+                      });
+                    }}
+                  >
+                    Create
+                  </Button>
+                </HStack>
+              </FormControl>
+            </Box>
+          )}
         </ModalBody>
 
         <ModalFooter>
-          <Button bgColor={"red.500"} size={"sm"} mr={3} onClick={onClose}>
-            Cancel
-          </Button>
-          <Button bgColor={"blue.400"} size={"sm"} onClick={saveRole}>
-            Save
+          <Button
+            bgColor={"red.500"}
+            size={"sm"}
+            mr={3}
+            onClick={() => {
+              onClose();
+              setInput(null);
+              setSelectedOption(null);
+            }}
+          >
+            Close
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -26,8 +26,6 @@ const SocketHandler = (req: any, res: any) => {
     mqttClient.on('message', (topic: any, message: Buffer) => {
       const messageData = message.toString();
       console.log(`Received MQTT message on topic ${topic}: ${messageData}`);
-
-      // Broadcast the MQTT message to all connected Socket.io clients
       io.emit('mqttMessage', { topic, message: messageData });
     });
   }
