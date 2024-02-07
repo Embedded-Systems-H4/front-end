@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Button,
   Divider,
@@ -19,7 +18,6 @@ import {
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
-  Stack,
   Tag,
   TagLabel,
   Tooltip,
@@ -31,7 +29,7 @@ import { Role } from "@models/Role";
 import { getDeviceById } from "@utils/deviceList";
 import { mergeRole, setRoleList } from "@utils/roleList";
 import { useCallback, useEffect, useState } from "react";
-import { FaX } from "react-icons/fa6";
+import { FaPlus, FaX } from "react-icons/fa6";
 import { useDebounce } from "react-use";
 export const RoleManagementModal = ({
   isOpen,
@@ -47,7 +45,8 @@ export const RoleManagementModal = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const device = getDeviceById(deviceId as string);
   const [roles, setRoles] = useState<Role[]>([]);
-  const rolesPresence = roles?.length > 0 && device?.allowedRoles;
+  const [allowedRoles, setAllowedRoles] = useState<Role[]>([]);
+  const rolesPresence = roles.length > 0;
   const [input, setInput] = useState<string | null>(null);
   const rolesSlice = roles.slice(4);
   const { isOpen: isTagTooltipOpen, onToggle: tagTooltipToggle } =
@@ -79,9 +78,22 @@ export const RoleManagementModal = ({
     setRoles(roles || []);
   }, [input]);
 
+  const checkAllowedRoles = useCallback(async () => {
+    const res = await fetch(`/api/database/getAllowedRoles`, {
+      method: "GET",
+      headers: {
+        deviceId: deviceId as string,
+      },
+    });
+    const data = await res.json();
+
+    setAllowedRoles(data.roles || []);
+  }, [deviceId]);
+
   useEffect(() => {
     checkRoles();
-  }, [checkRoles]);
+    checkAllowedRoles();
+  }, [checkAllowedRoles, checkRoles]);
 
   useDebounce(
     () => {
@@ -113,6 +125,37 @@ export const RoleManagementModal = ({
     [checkRoles]
   );
 
+  const allowRole = useCallback(
+    async ({
+      name,
+      color,
+      deviceId,
+    }: {
+      name: string;
+      color: string;
+      deviceId: string;
+    }) => {
+      const res = await fetch(`/api/database/allowRole`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name,
+          color: color,
+          deviceId,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        console.log(data.error);
+      }
+      const role = data?.role;
+      if (role) {
+        mergeRole(role);
+        checkRoles();
+      }
+    },
+    [checkRoles]
+  );
+
   const deleteRole = useCallback(
     async ({ name }: { name: string }) => {
       const res = await fetch(`/api/database/deleteRole`, {
@@ -125,12 +168,30 @@ export const RoleManagementModal = ({
       if (data.error) {
         console.log(data.error);
       }
-      const role = data?.role;
-      if (role) {
-        checkRoles();
-      }
+      checkRoles();
     },
     [checkRoles]
+  );
+
+  const deleteAllowedRole = useCallback(
+    async ({ name, deviceId }: { name: string; deviceId: string }) => {
+      const res = await fetch(`/api/database/deleteAllowedRole`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.toUpperCase(),
+          deviceId,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        console.log(data.error);
+      }
+      const role = data?.role;
+      if (role) {
+        checkAllowedRoles();
+      }
+    },
+    [checkAllowedRoles]
   );
 
   return (
@@ -140,34 +201,7 @@ export const RoleManagementModal = ({
         <ModalHeader>Role management</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          {deviceId &&
-            device?.allowedRoles &&
-            device?.allowedRoles?.length > 0 && (
-              <>
-                <chakra.span>Current roles</chakra.span>
-                <HStack spacing={4} my={1} mb={4}>
-                  <Stack
-                    direction="column"
-                    bgColor={"gray.800"}
-                    p={2}
-                    borderRadius={"md"}
-                  >
-                    <chakra.span>Roles with access</chakra.span>
-                    <Divider borderColor={"gray.500"} />
-                    <HStack>
-                      {device.allowedRoles?.map((role: Role) => {
-                        return (
-                          <>
-                            <Badge>{role.name}</Badge>
-                          </>
-                        );
-                      })}
-                    </HStack>
-                  </Stack>
-                </HStack>
-              </>
-            )}
-          {roles?.length > 0 && (
+          {roles?.length > 0 && context === "create" && (
             <Box
               borderRadius={"md"}
               border={"1px"}
@@ -269,7 +303,228 @@ export const RoleManagementModal = ({
             </Box>
           )}
 
-          {/* {!rolesPresence && context === "manage" && (
+          {roles?.length > 0 && context === "manage" && (
+            <>
+              <Box
+                borderRadius={"md"}
+                border={"1px"}
+                fontSize={"sm"}
+                borderColor={"gray.500"}
+                pt={3}
+                px={3}
+              >
+                <chakra.span fontSize={"sm"} fontWeight={"bold"}>
+                  Avalible roles
+                </chakra.span>
+                <Divider />
+                <HStack spacing={1} my={1} mb={8}>
+                  {roles?.slice(0, 4).map((role: Role, index: number) => (
+                    <Tag
+                      key={index}
+                      variant="subtle"
+                      size={"sm"}
+                      bgColor={`${role.color}.200`}
+                      color={`${role.color}.700`}
+                      userSelect={"none"}
+                      my={0.5}
+                      mx={0.5}
+                    >
+                      <HStack h={"100%"} w={"100%"}>
+                        <Tooltip label={role.name}>
+                          <TagLabel>{role.name}</TagLabel>
+                        </Tooltip>
+                        <FaPlus
+                          style={{
+                            width: "10px",
+                            height: "10px",
+                          }}
+                          cursor={"pointer"}
+                          onClick={() =>
+                            allowRole({
+                              name: role.name,
+                              color: role.color,
+                              deviceId: deviceId as string,
+                            })
+                          }
+                        />
+                      </HStack>
+                    </Tag>
+                  ))}
+                  {roles.length > 4 && (
+                    <Popover>
+                      <PopoverTrigger>
+                        <Button
+                          variant="subtle"
+                          h={"22px"}
+                          w={"80px"}
+                          fontSize={"xs"}
+                          borderRadius={"md"}
+                          cursor={"pointer"}
+                          userSelect={"none"}
+                          bgColor={"gray.700"}
+                        >
+                          <chakra.span color={"white"} px={2}>
+                            +{roles.length - 4} more
+                          </chakra.span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        zIndex={"popiver"}
+                        bgColor={"gray.700"}
+                        border={0}
+                        fontSize={"sm"}
+                      >
+                        <PopoverBody>
+                          <Flex flexWrap="wrap">
+                            {rolesSlice.map((role, index) => (
+                              <Tag
+                                key={index}
+                                variant="subtle"
+                                size={"sm"}
+                                colorScheme={`${role.color}.200`}
+                                userSelect={"none"}
+                                my={0.5}
+                                mx={0.5}
+                              >
+                                <TagLabel>
+                                  <HStack>
+                                    <chakra.span>{role.name}</chakra.span>
+                                    <FaX
+                                      style={{
+                                        width: "10px",
+                                        height: "10px",
+                                      }}
+                                      cursor={"pointer"}
+                                      onClick={() =>
+                                        deleteRole({ name: role.name })
+                                      }
+                                    />
+                                  </HStack>
+                                </TagLabel>
+                              </Tag>
+                            ))}
+                          </Flex>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </HStack>
+              </Box>
+              {device?.allowedRoles && device?.allowedRoles?.length > 0 && (
+                <>
+                  <Box
+                    borderRadius={"md"}
+                    border={"1px"}
+                    fontSize={"sm"}
+                    borderColor={"gray.500"}
+                    pt={3}
+                    mt={3}
+                    px={3}
+                  >
+                    <chakra.span fontSize={"sm"} fontWeight={"bold"}>
+                      Current roles
+                    </chakra.span>
+                    <Divider />
+                    <HStack spacing={1} my={1} mb={8}>
+                      {device?.allowedRoles
+                        ?.slice(0, 4)
+                        .map((role: Role, index: number) => (
+                          <Tag
+                            key={index}
+                            variant="subtle"
+                            size={"sm"}
+                            bgColor={`${role.color}.200`}
+                            color={`${role.color}.700`}
+                            userSelect={"none"}
+                            my={0.5}
+                            mx={0.5}
+                          >
+                            <HStack h={"100%"} w={"100%"}>
+                              <Tooltip label={role.name}>
+                                <TagLabel>{role.name}</TagLabel>
+                              </Tooltip>
+                              <FaX
+                                style={{
+                                  width: "10px",
+                                  height: "10px",
+                                }}
+                                cursor={"pointer"}
+                                onClick={() =>
+                                  deleteAllowedRole({
+                                    name: role.name,
+                                    deviceId: deviceId as string,
+                                  })
+                                }
+                              />
+                            </HStack>
+                          </Tag>
+                        ))}
+                      {roles.length > 4 && (
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button
+                              variant="subtle"
+                              h={"22px"}
+                              w={"80px"}
+                              fontSize={"xs"}
+                              borderRadius={"md"}
+                              cursor={"pointer"}
+                              userSelect={"none"}
+                              bgColor={"gray.700"}
+                            >
+                              <chakra.span color={"white"} px={2}>
+                                +{roles.length - 4} more
+                              </chakra.span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            zIndex={"popiver"}
+                            bgColor={"gray.700"}
+                            border={0}
+                            fontSize={"sm"}
+                          >
+                            <PopoverBody>
+                              <Flex flexWrap="wrap">
+                                {rolesSlice.map((role, index) => (
+                                  <Tag
+                                    key={index}
+                                    variant="subtle"
+                                    size={"sm"}
+                                    colorScheme={`${role.color}.200`}
+                                    userSelect={"none"}
+                                    my={0.5}
+                                    mx={0.5}
+                                  >
+                                    <TagLabel>
+                                      <HStack>
+                                        <chakra.span>{role.name}</chakra.span>
+                                        <FaX
+                                          style={{
+                                            width: "10px",
+                                            height: "10px",
+                                          }}
+                                          cursor={"pointer"}
+                                          onClick={() =>
+                                            deleteRole({ name: role.name })
+                                          }
+                                        />
+                                      </HStack>
+                                    </TagLabel>
+                                  </Tag>
+                                ))}
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </HStack>
+                  </Box>
+                </>
+              )}
+            </>
+          )}
+
+          {!rolesPresence && context === "manage" && (
             <HStack
               spacing={4}
               fontSize={"sm"}
@@ -283,7 +538,7 @@ export const RoleManagementModal = ({
                 No roles avalible, please create a role.
               </chakra.span>
             </HStack>
-          )} */}
+          )}
 
           {context === "create" && (
             <Box
