@@ -17,7 +17,8 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { deviceId } = req.headers
+    const deviceId = req.headers?.["device-id"]
+    
     async function getAllowedRoles() {
         try {
             const db = database("MAIN");
@@ -26,12 +27,12 @@ export default async function handler(
                 {
                     $match: {
                         "id": deviceId, // Replace with the actual ObjectId of the document
-                        "allowedRoles": { $exists: true, $ne: null }
+                        "allowedRoles": { $exists: true }
                     }
                 }
             ]);
             const roleList = await documentsCursor.toArray()
-
+            console.log(deviceId)
             if (roleList.length > 0) {
                 return roleList;
             } else {
@@ -51,7 +52,7 @@ export default async function handler(
             })
         } else {
             res.status(200).json({
-                roles: response
+                response
             })
         }
     } catch (error) {

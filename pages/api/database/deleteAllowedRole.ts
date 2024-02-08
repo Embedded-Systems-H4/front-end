@@ -17,7 +17,8 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, deviceId } = JSON.parse(req.body)
+    const { name } = JSON.parse(req.body)
+    const deviceId = req.body?.["device-id"]
     console.log(deviceId, name)
     async function deleteAllowedRole() {
         try {

@@ -1,6 +1,6 @@
 import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
 import { DeviceList } from "@components/DeviceList";
-import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
+import { RoleCreationModal } from "@components/Modals/RoleCreationModal";
 import type { NextPage } from "next";
 import { MdAddToPhotos } from "react-icons/md";
 
@@ -8,7 +8,7 @@ const Home: NextPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return (
     <>
-      <RoleManagementModal isOpen={isOpen} onClose={onClose} context="create" />
+      <RoleCreationModal isOpen={isOpen} onClose={onClose} context="create" />
       <VStack ml={{ base: 0, md: 60 }} p="4">
         <HStack w={"100%"} h={"100%"}>
           <VStack w={"100%"}>

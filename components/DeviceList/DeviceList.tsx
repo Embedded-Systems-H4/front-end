@@ -35,6 +35,31 @@ export const DeviceList = () => {
     }
   }, []);
 
+  const context = "get";
+
+  const roleHandler = {
+    getRoles: useCallback(async()=> {
+      const res = await fetch("/api/database/getRoles", {});
+        const data = await res.json();
+        if (data?.roles) {
+          // setRoles(data?.roles);
+          // setRoleList(data?.roles);
+        }
+    }, []),
+
+    saveRole: useCallback(()=> {
+
+    }, []),
+
+    deleteRole: useCallback(()=> {
+
+    }, []),
+    
+    setRoles: useCallback(()=> {
+
+    }, []),
+  }
+
   useEffect(() => {
     getDevices();
   }, [getDevices]);
@@ -163,6 +188,7 @@ export const DeviceList = () => {
                   </HStack>
                 </Stack>
                 <Stack
+                  justifyContent={'space-between'}
                   flexDir={{
                     base: "row",
                     lg: "column",
@@ -173,6 +199,7 @@ export const DeviceList = () => {
                     fontSize={"xs"}
                     bgColor={"blue.400"}
                     size={"sm"}
+                    borderRadius={'md'}
                     _hover={{
                       bgColor: "blue.500",
                     }}
@@ -186,11 +213,13 @@ export const DeviceList = () => {
                   >
                     Manage roles
                   </Button>
+                  <Divider borderColor={"gray.500"} />
                   <Button
                     justifyContent={"center"}
                     fontSize={"xs"}
                     bgColor={"red.500"}
                     size={"sm"}
+                    borderRadius={'md'}
                     _hover={{
                       bgColor: "red.600",
                     }}

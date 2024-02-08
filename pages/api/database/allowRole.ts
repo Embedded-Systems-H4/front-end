@@ -17,7 +17,8 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, color, deviceId } = JSON.parse(req.body)
+    const { name, color } = JSON.parse(req.body)
+    const deviceId = req.body?.["device-id"]
     async function allowRole() {
         try {
             const db = database("MAIN");
