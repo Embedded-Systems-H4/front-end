@@ -54,7 +54,6 @@ interface SidebarProps extends BoxProps {
 
 const LinkItems: Array<LinkItemProps> = [
     { name: 'Settings', icon: IoSettings },
-    { name: 'Status', icon: IoFitness },
     { name: 'Logs', icon: IoDocumentText }
 ]
 
@@ -86,7 +85,6 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
 
                 const isActive = {
                     "Settings": pathname === "/",
-                    "Status": pathname === "/status",
                     "Logs": pathname === "/logs"
                 }[link.name]
                 return (
@@ -104,7 +102,6 @@ const NavItem = ({ icon, children, isActive, ...rest }: NavItemProps) => {
 
     const href = {
         "Settings": "/",
-        "Status": "/status",
         "Logs": "/logs"
     }[children as string]
 

@@ -4,87 +4,130 @@ import {
   AccordionIcon,
   AccordionItem,
   AccordionPanel,
-  Badge,
   Box,
   Button,
   Divider,
+  Flex,
   HStack,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Stack,
+  Tag,
+  TagLabel,
+  Tooltip,
   chakra,
+  useBreakpointValue,
   useDisclosure,
 } from "@chakra-ui/react";
 import { DateElement } from "@components/Date/Date";
 import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
-import { Door } from "@models/Door";
-import { setDeviceList } from "@utils/deviceList";
+import { useHookstate } from "@hookstate/core";
+import { Role } from "@models/Role";
+import { doorsGlobalState } from "@utils/globalStates";
 import { useMQTT } from "@utils/useMQTT";
 import { useCallback, useEffect, useState } from "react";
 import { FaLock, FaUserPlus } from "react-icons/fa6";
-import { TbWifiOff } from "react-icons/tb";
-export const DeviceList = () => {
+import { TbWifi, TbWifiOff } from "react-icons/tb";
+
+export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [contextId, setContextId] = useState<string | null>(null);
-  const [devices, setDevices] = useState<Door[]>([]);
+
+  const doors = useHookstate(doorsGlobalState);
+
+  const [deviceId, setDeviceId] = useState("");
+
+  const { publish } = useMQTT({ callback: () => {} });
 
   const getDevices = useCallback(async () => {
     const res = await fetch(`/api/database/getDevices`, {});
-    const data = await res.json();
-    if (data?.devices) {
-      setDevices(data.devices);
-      setDeviceList(data.devices);
+    const { response } = await res.json();
+    if (response) {
+      doors.set(response);
     }
+  }, [doors]);
+
+  const updateDevice = useCallback(
+    async ({ args }: { args: any }) => {
+      await fetch(`/api/database/updateDevice`, {
+        headers: {
+          ...args,
+        },
+      });
+      getDevices();
+    },
+    [getDevices]
+  );
+
+  const [deviceStatus, setDeviceStatus] = useState<Record<string, string>>({});
+
+  const updateDeviceStatus = useCallback((deviceId: string, status: string) => {
+    setDeviceStatus((prevStatus) => ({
+      ...prevStatus,
+      [deviceId]: status,
+    }));
   }, []);
 
-  const context = "get";
+  const topicHandler = useCallback(
+    ({ topic, message }: { topic: string; message: string }) => {
+      const onTopic = {
+        "devices/register": () => {
+          getDevices();
+        },
+        "devices/heartbeat": () => {
+          const { id } = JSON.parse(message);
+          updateDeviceStatus(id, "online");
+        },
+      }[topic];
 
-  const roleHandler = {
-    getRoles: useCallback(async()=> {
-      const res = await fetch("/api/database/getRoles", {});
-        const data = await res.json();
-        if (data?.roles) {
-          // setRoles(data?.roles);
-          // setRoleList(data?.roles);
-        }
-    }, []),
+      onTopic?.();
+    },
+    [getDevices, updateDeviceStatus]
+  );
 
-    saveRole: useCallback(()=> {
+  useMQTT({
+    topics: ["devices/heartbeat", "devices/register"] as string[],
+    callback: (e) => {
+      topicHandler({
+        message: e.message,
+        topic: e.topic,
+      });
+    },
+  });
 
-    }, []),
+  useEffect(() => {
+    const heartbeatTimeout = setTimeout(() => {
+      for (const deviceId in deviceStatus) {
+        updateDeviceStatus(deviceId, "offline");
+      }
+    }, 4000);
 
-    deleteRole: useCallback(()=> {
-
-    }, []),
-    
-    setRoles: useCallback(()=> {
-
-    }, []),
-  }
+    return () => clearTimeout(heartbeatTimeout);
+  }, [deviceStatus, updateDeviceStatus]);
 
   useEffect(() => {
     getDevices();
-  }, [getDevices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onCallback]);
 
-  const mqtt = useMQTT("devices/register");
-
-  useEffect(() => {
-    if (mqtt) {
-      mqtt.on("mqttMessage", getDevices);
-      return () => {
-        mqtt.off("mqttMessage", getDevices);
-      };
-    }
-  }, [mqtt, getDevices]);
+  const isSmallScreen = useBreakpointValue({
+    base: true,
+    lg: false,
+  });
 
   return (
     <>
       <RoleManagementModal
         isOpen={isOpen}
-        onClose={onClose}
-        deviceId={contextId as string}
-        context="manage"
+        onClose={() => {
+          onClose();
+          getDevices();
+        }}
+        deviceId={deviceId}
       />
-      <Accordion w={"100%"} allowToggle>
-        {devices?.map((device) => (
+      <Accordion w={"100%"} allowMultiple>
+        {doors.get({ noproxy: true })?.map((device) => (
           <AccordionItem
             key={device.id}
             border={"1px"}
@@ -95,14 +138,6 @@ export const DeviceList = () => {
             <AccordionButton>
               <Box as="span" flex="1" textAlign="left">
                 {device.name}
-                {/* <IconButton
-                aria-label="edit-device-name"
-                icon={
-                  <FaPen
-                    style={{ width: "16px", height: "16px", margin: "0 16px" }}
-                  />
-                }
-              /> */}
               </Box>
               <AccordionIcon />
             </AccordionButton>
@@ -116,23 +151,79 @@ export const DeviceList = () => {
                   lg: "row",
                 }}
               >
-                {device?.allowedRoles && device?.allowedRoles?.length > 0 && (
+                <Stack
+                  width={isSmallScreen ? "100%" : "auto"}
+                  justifyContent={isSmallScreen ? "space-between" : "center"}
+                  flexDir={{
+                    base: "row",
+                    lg: "column",
+                  }}
+                >
+                  <Button
+                    width={isSmallScreen ? "50%" : "auto"}
+                    justifyContent={"center"}
+                    fontSize={"xs"}
+                    bgColor={"blue.400"}
+                    size={"sm"}
+                    borderRadius={"md"}
+                    _hover={{
+                      bgColor: "blue.500",
+                    }}
+                    leftIcon={
+                      <FaUserPlus style={{ height: "12px", width: "12px" }} />
+                    }
+                    onClick={() => {
+                      setDeviceId(device.id);
+                      onOpen();
+                    }}
+                  >
+                    Manage access
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      publish(
+                        "devices/lock",
+                        `{"id": ${device.id}, "locked": ${device.locked}}`
+                      );
+                      updateDevice({
+                        args: {
+                          device_id: device.id,
+                          locked: device.locked ? false : true,
+                        },
+                      });
+                    }}
+                    width={isSmallScreen ? "50%" : "auto"}
+                    justifyContent={"center"}
+                    fontSize={"xs"}
+                    bgColor={"red.500"}
+                    size={"sm"}
+                    borderRadius={"md"}
+                    _hover={{
+                      bgColor: "red.600",
+                    }}
+                    leftIcon={
+                      <FaLock style={{ height: "12px", width: "12px" }} />
+                    }
+                  >
+                    {device.locked ? "Unlock" : "Lock"}
+                  </Button>
+                </Stack>
+                {device.lastUpdatedAt && (
                   <Stack
                     direction="column"
                     bgColor={"gray.800"}
                     p={2}
                     borderRadius={"md"}
                   >
-                    <chakra.span>Roles with access</chakra.span>
+                    <chakra.span>Last activity</chakra.span>
                     <Divider borderColor={"gray.500"} />
-                    <HStack>
-                      {device.allowedRoles?.map((role) => {
-                        return (
-                          <>
-                            <Badge>{role.name}</Badge>
-                          </>
-                        );
-                      })}
+                    <HStack justifyContent={"center"}>
+                      <DateElement
+                        localeIdentifier="da-DK"
+                        timestamp={device.lastUpdatedAt}
+                        type="relative"
+                        withTooltip
+                      />
                     </HStack>
                   </Stack>
                 )}
@@ -142,36 +233,30 @@ export const DeviceList = () => {
                   p={2}
                   borderRadius={"md"}
                 >
-                  <chakra.span>Last activity</chakra.span>
-                  <Divider borderColor={"gray.500"} />
-                  <HStack justifyContent={"center"}>
-                    <DateElement
-                      localeIdentifier="da-DK"
-                      timestamp={new Date()}
-                      type="relative"
-                      withTooltip
-                    />
-                  </HStack>
-                </Stack>
-                <Stack
-                  direction="column"
-                  bgColor={"gray.800"}
-                  p={2}
-                  borderRadius={"md"}
-                >
                   <chakra.span>Status</chakra.span>
                   <Divider borderColor={"gray.500"} />
                   <HStack justifyContent={"center"}>
-                    {device.status === "online" ? (
-                      <HStack>
+                    {deviceStatus[device.id] === "online" ? (
+                      <HStack spacing={1}>
                         <chakra.span>Online</chakra.span>
-                        <TbWifiOff
-                          style={{
-                            color: "lime",
-                            height: "20px",
-                            width: "20px",
+                        <Box
+                          css={{
+                            animation: `blink 3s infinite`,
+                            "@keyframes blink": {
+                              "0%": { opacity: 1 },
+                              "50%": { opacity: 0.3 },
+                              "100%": { opacity: 1 },
+                            },
                           }}
-                        />
+                        >
+                          <TbWifi
+                            style={{
+                              color: "lime",
+                              height: "20px",
+                              width: "20px",
+                            }}
+                          />
+                        </Box>
                       </HStack>
                     ) : (
                       <HStack>
@@ -187,49 +272,87 @@ export const DeviceList = () => {
                     )}
                   </HStack>
                 </Stack>
-                <Stack
-                  justifyContent={'space-between'}
-                  flexDir={{
-                    base: "row",
-                    lg: "column",
-                  }}
-                >
-                  <Button
-                    justifyContent={"center"}
-                    fontSize={"xs"}
-                    bgColor={"blue.400"}
-                    size={"sm"}
-                    borderRadius={'md'}
-                    _hover={{
-                      bgColor: "blue.500",
-                    }}
-                    leftIcon={
-                      <FaUserPlus style={{ height: "12px", width: "12px" }} />
-                    }
-                    onClick={() => {
-                      setContextId(device.id);
-                      onOpen();
-                    }}
+                {device?.allowedRoles && device?.allowedRoles?.length > 0 && (
+                  <Stack
+                    direction="column"
+                    bgColor={"gray.800"}
+                    p={2}
+                    borderRadius={"md"}
                   >
-                    Manage roles
-                  </Button>
-                  <Divider borderColor={"gray.500"} />
-                  <Button
-                    justifyContent={"center"}
-                    fontSize={"xs"}
-                    bgColor={"red.500"}
-                    size={"sm"}
-                    borderRadius={'md'}
-                    _hover={{
-                      bgColor: "red.600",
-                    }}
-                    leftIcon={
-                      <FaLock style={{ height: "12px", width: "12px" }} />
-                    }
-                  >
-                    Lock permanently
-                  </Button>
-                </Stack>
+                    <chakra.span>Roles with access</chakra.span>
+                    <Divider borderColor={"gray.500"} />
+                    <HStack>
+                      {device?.allowedRoles
+                        ?.slice(0, 2)
+                        .map((role: Role, index: number) => (
+                          <Tag
+                            key={index}
+                            variant="subtle"
+                            size={"sm"}
+                            bgColor={`${role.color}.200`}
+                            color={`${role.color}.700`}
+                            userSelect={"none"}
+                          >
+                            <HStack h={"100%"} w={"100%"}>
+                              <Tooltip label={role.name}>
+                                <TagLabel>{role.name}</TagLabel>
+                              </Tooltip>
+                            </HStack>
+                          </Tag>
+                        ))}
+                      {device?.allowedRoles?.length > 2 && (
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button
+                              variant="subtle"
+                              h={"22px"}
+                              w={"80px"}
+                              fontSize={"xs"}
+                              borderRadius={"md"}
+                              cursor={"pointer"}
+                              userSelect={"none"}
+                              bgColor={"gray.700"}
+                            >
+                              <chakra.span color={"white"} px={2}>
+                                +{device?.allowedRoles.length - 2} more
+                              </chakra.span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            w={"100%"}
+                            zIndex={"popover"}
+                            bgColor={"gray.700"}
+                            border={0}
+                            fontSize={"sm"}
+                          >
+                            <PopoverBody>
+                              <Flex flexWrap="wrap">
+                                {device.allowedRoles
+                                  ?.slice(2)
+                                  .map((role, index) => (
+                                    <Tag
+                                      key={index}
+                                      variant="subtle"
+                                      size={"sm"}
+                                      bgColor={`${role.color}.200`}
+                                      color={`${role.color}.700`}
+                                      userSelect={"none"}
+                                    >
+                                      <TagLabel>
+                                        <HStack>
+                                          <chakra.span>{role.name}</chakra.span>
+                                        </HStack>
+                                      </TagLabel>
+                                    </Tag>
+                                  ))}
+                              </Flex>
+                            </PopoverBody>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </HStack>
+                  </Stack>
+                )}
               </Stack>
             </AccordionPanel>
           </AccordionItem>

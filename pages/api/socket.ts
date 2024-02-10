@@ -2,9 +2,26 @@ import * as mqtt from 'mqtt';
 import { Server } from 'socket.io';
 
 const SocketHandler = (req: any, res: any) => {
-  const topic = req.headers.topic
+  const { topics, topic, action, message } = JSON.parse(req.body);
+
   if (res.socket.server.io) {
-    console.log('Socket is already running');
+    if (action === 'publish' && topic && message) {
+      // Handle client's publish request
+      const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST}`, {
+        username: process.env.MQTT_USERNAME,
+        password: process.env.MQTT_PASSWORD,
+        port: parseInt(process.env.MQTT_PORT as string),
+        clientId: "front-end"
+      });
+
+      mqttClient.on('connect', () => {
+        mqttClient.publish(topic, message);
+        console.log(`Published MQTT message on topic ${topic}: ${message}`);
+        mqttClient.end();
+      });
+    } else {
+      // Handle other client-side actions, if needed
+    }
   } else {
     console.log('Socket is initializing');
     const io = new Server(res.socket.server);
@@ -20,13 +37,20 @@ const SocketHandler = (req: any, res: any) => {
 
     mqttClient.on('connect', () => {
       console.log('MQTT connected');
-      mqttClient.subscribe(topic);
+      mqttClient.subscribe(topics);
     });
 
-    mqttClient.on('message', (topic: any, message: Buffer) => {
-      const messageData = message.toString();
-      console.log(`Received MQTT message on topic ${topic}: ${messageData}`);
-      io.emit('mqttMessage', { topic, message: messageData });
+    mqttClient.on('message', (mqttTopic: any, mqttMessage: Buffer) => {
+      const messageData = mqttMessage.toString();
+      console.log(`Received MQTT message on topic ${mqttTopic}: ${messageData}`);
+      io.emit('mqttMessage', { topic: mqttTopic, message: messageData });
+    });
+
+    // Handle client's subscribe request, if needed
+    io.on('connection', (socket) => {
+      socket.on('subscribe', (clientTopics) => {
+        mqttClient.subscribe(clientTopics);
+      });
     });
   }
 

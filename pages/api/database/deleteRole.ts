@@ -1,4 +1,5 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import { UpdateFilter } from 'mongodb';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { database } from './database';
 
@@ -17,24 +18,31 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, color } = JSON.parse(req.body)
+    const { name, color, context, device_id } = req.headers
     async function deleteRole() {
         try {
             const db = database("MAIN");
+            let result = { name: name }; // Default result object
 
-            // Delete from 'roles' collection
-            const rolesCollection = db.collection('roles');
-            const rolesQuery = await rolesCollection.deleteOne({ "name": name });
+            // Check context before updating 'devices' collection
+            if (context !== "device") {
+                // Delete from 'roles' collection
+                const rolesCollection = db.collection('roles');
+                const rolesQuery = await rolesCollection.deleteOne({ "name": name });
+                if (rolesQuery?.acknowledged) {
+                    result = { name: name };
+                }
 
-            // Delete from 'devices' collection
+            }
+
             const devicesCollection = db.collection('devices');
             const devicesQuery = await devicesCollection.updateMany(
-                { "allowedRoles": name },
-                { $pull: { "allowedRoles": name } }
+                context === "device" ? { "id": device_id, "allowedRoles": { name: name, color: color } } : { "allowedRoles": { name: name, color: color } },
+                { $pull: { "allowedRoles": { name: name, color: color } } as UpdateFilter<Document> }
             );
 
-            if (rolesQuery?.acknowledged && devicesQuery?.acknowledged) {
-                return { name: name };
+            if (devicesQuery?.acknowledged) {
+                return result;
             }
         } catch (error) {
             console.log(error);
@@ -50,7 +58,7 @@ export default async function handler(
             })
         } else {
             res.status(200).json({
-                role: response
+                response
             })
         }
     } catch (error) {

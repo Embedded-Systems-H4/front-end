@@ -17,31 +17,69 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, color } = JSON.parse(req.body)
+    const { name, color, context, device_id } = req.headers
+
     async function saveRole() {
         try {
             const db = database("MAIN");
-            const collection = db.collection('roles');
-            const query = await collection.updateOne(
-                {
-                    "name": name
-                },
-                {
-                    "$set": {
-                        name: name,
-                        color: color
+            let result = { name: name }; // Default result object
+            if (context !== "device") {
+
+                const deviceCollection = db.collection('devices');
+                const rolesCollection = db.collection('roles');
+                const rolesQuery = await rolesCollection.updateOne(
+                    {
+                        "name": name
+                    },
+                    {
+                        "$set": {
+                            name: name,
+                            color: color
+                        }
+                    },
+                    {
+                        upsert: true
                     }
-                },
-                {
-                    upsert: true
+                )
+
+                await deviceCollection.updateMany(
+                    {
+                        "allowedRoles.name": name,
+                    },
+                    {
+                        "$set": {
+                            "allowedRoles.$.name": name,
+                            "allowedRoles.$.color": color
+                        }
+                    }
+                );
+
+                if (rolesQuery?.acknowledged) {
+                    return { name: name }
                 }
-            )
-            if (query?.acknowledged) {
-                return {
-                    name: name,
-                    color: color
+            } else {
+                const deviceCollection = db.collection('devices');
+                const devicesQuery = await deviceCollection.updateOne(
+                    { "id": device_id },
+                    {
+                        $push: {
+                            "allowedRoles": {
+                                $each: [
+                                    {
+                                        name: name,
+                                        color: color
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                )
+
+                if (devicesQuery?.acknowledged) {
+                    return { name: name }
                 }
             }
+
         } catch (error) {
             console.log(error);
             return new CustomError("Unable to save role", 500)
@@ -56,7 +94,7 @@ export default async function handler(
             })
         } else {
             res.status(200).json({
-                role: response
+                response
             })
         }
     } catch (error) {

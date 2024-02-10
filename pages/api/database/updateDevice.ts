@@ -17,48 +17,42 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, color } = JSON.parse(req.body)
-    const deviceId = req.body?.["device-id"]
-    async function allowRole() {
+    const { device_id, locked } = req.headers
+
+    console.log(locked)
+    async function updateDevice() {
         try {
             const db = database("MAIN");
             const collection = db.collection('devices');
-            const query = await collection.updateOne(
-                { "id": deviceId },
+            await collection.updateOne(
                 {
-                    "$push": {
-                        "allowedRoles": {
-                            "name": name,
-                            "color": color
-                        }
+                    "id": device_id
+                },
+                {
+                    "$set": {
+                        ...(typeof locked !== "undefined" && { "locked": locked === "true" ? true : false })
                     }
                 }
-            );
-            if (query?.acknowledged) {
-                return {
-                    name: name,
-                    color: color
-                }
-            }
+            )
         } catch (error) {
             console.log(error);
-            return new CustomError("Unable to save role", 500)
+            return new CustomError("Unable to set lock status", 500)
         }
     }
 
     try {
-        const response = await allowRole()
+        const response = await updateDevice()
         if (response instanceof CustomError) {
             res.status(response.code).json({
                 error: { message: response.message, code: response.code }
             })
         } else {
             res.status(200).json({
-                role: response
+                response
             })
         }
     } catch (error) {
         console.log(error);
-        return new CustomError("Unable to save role", 500)
+        return new CustomError("Unable to set lock status", 500)
     }
 }

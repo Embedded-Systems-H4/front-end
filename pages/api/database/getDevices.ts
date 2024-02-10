@@ -21,15 +21,8 @@ export default async function handler(
         try {
             const db = database("MAIN");
             const collection = db.collection('devices');
-            const documentsCursor = collection.aggregate([
-                {
-                    $sort: {
-                        lastUpdatedAt: -1,
-                    },
-                }
-            ]);
+            const documentsCursor = collection.find({})
             const deviceList = await documentsCursor.toArray()
-
             if (deviceList.length > 0) {
                 return deviceList;
             } else {
@@ -49,7 +42,7 @@ export default async function handler(
             })
         } else {
             res.status(200).json({
-                devices: response
+                response
             })
         }
     } catch (error) {

@@ -17,24 +17,22 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name } = req.headers
+    const { context, device_id } = req.headers
     async function getRoles() {
         try {
             const db = database("MAIN");
-            const collection = db.collection('roles');
+            const collection = db.collection(context === "device" ? 'devices' : 'roles');
+
             const documentsCursor = collection.aggregate([
                 {
-                    $match: {
-                        name: { $exists: true, $ne: null } // Filter documents where the 'name' field exists and is not null
-                    }
+                    $match: context === "device" ? { "id": device_id, "allowedRoles": { $exists: true, $ne: null } } : { name: { $exists: true, $ne: null } }
                 }
             ]);
             const roleList = await documentsCursor.toArray()
-
             if (roleList.length > 0) {
-                return roleList;
+                return context === "device" ? roleList[0].allowedRoles : roleList
             } else {
-                return new CustomError("No roles found", 404)
+                return []
             }
         } catch (error) {
             console.log(error);
@@ -50,7 +48,7 @@ export default async function handler(
             })
         } else {
             res.status(200).json({
-                roles: response
+                response
             })
         }
     } catch (error) {

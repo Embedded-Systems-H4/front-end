@@ -18,144 +18,100 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { chakra } from "@chakra-ui/system";
-import { Door } from "@models/Door";
+import { useHookstate } from "@hookstate/core";
 import { Role } from "@models/Role";
-import { getDeviceById, getDeviceList } from "@utils/deviceList";
-import { setRoleList } from "@utils/roleList";
-import { useCallback, useEffect, useState } from "react";
-import { useDebounce } from "react-use";
+import { deviceRolesGlobalState, rolesGlobalState } from "@utils/globalStates";
+import { useCallback, useEffect } from "react";
+
 export const RoleManagementModal = ({
   isOpen,
   onClose,
   deviceId,
-  context,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  context: "manage" | "create";
   deviceId?: string;
 }) => {
-
-  // const deviceList = getDeviceList()
-  // console.log(deviceList)
-  const device = getDeviceById(deviceId as string)[0] as Door
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [allowedRoles, setAllowedRoles] = useState<Role[]>([]);
-  const rolesPresence = roles.length > 0
-  const [input, setInput] = useState<string | null>(null);
+  const deviceRoles = useHookstate(deviceRolesGlobalState);
+  const roles = useHookstate(rolesGlobalState);
 
   const getRoles = useCallback(async () => {
-    const res = await fetch("/api/database/getRoles", {});
-    const data = await res.json();
-    if (data?.roles) {
-      setRoles(data?.roles);
-      setRoleList(data?.roles);
-    }
-  }, []);
-
-  const checkRoles = useCallback(async () => {
-    const res = await fetch(`/api/database/getRoles`, {
-      method: "GET",
+    const res = await fetch("/api/database/getRoles", {
       headers: {
-        name: input?.toUpperCase() as string,
-      },
-    });
-    const data = await res.json();
-    const roles = data.roles;
-
-    setRoles(roles || []);
-  }, [input]);
-
-  const getAllowedRoles = useCallback(async () => {
-    const res = await fetch(`/api/database/getAllowedRoles`, {
-      method: "GET",
-      headers: {
-        "device-id": deviceId as string,
+        device_id: deviceId as string,
+        context: "device",
       },
     });
     const { response } = await res.json();
-    if (response?.allowedRoles) {
-      setAllowedRoles(response?.allowedRoles);
+    if (response) {
+      deviceRoles.set(response);
     }
-  }, []);
+  }, [deviceId, deviceRoles]);
 
-  const allowRole = useCallback(
-    async ({
-      name,
-      color,
-    }: {
-      name: string;
-      color: string;
-    }) => {
-      const res = await fetch(`/api/database/allowRole`, {
+  const saveRole = useCallback(
+    async ({ name, color }: { name: string; color: string }) => {
+      const res = await fetch(`/api/database/saveRole`, {
         method: "POST",
-        body: JSON.stringify({
+        headers: {
           name: name,
+          context: "device",
           color: color,
-          "device-id": deviceId,
-        }),
+          device_id: deviceId as string,
+        },
       });
-      const data = await res.json();
-      if (data.error) {
-        console.log(data.error);
-      }
-      const role = data?.role;
-      if (role) {
-        getAllowedRoles();
+      const { error } = await res.json();
+      if (!error) {
+        deviceRoles.merge([{ name, color }]);
       }
     },
-    [getAllowedRoles]
+    [deviceId, deviceRoles]
   );
 
-  const deleteAllowedRole = useCallback(
-    async ({ name }: { name: string; }) => {
-      const res = await fetch(`/api/database/deleteAllowedRole`, {
+  const deleteRole = useCallback(
+    async ({ name, color }: { name: string; color: string }) => {
+      const res = await fetch(`/api/database/deleteRole`, {
         method: "POST",
-        body: JSON.stringify({
-          name: name.toUpperCase(),
-          "device-id": deviceId,
-        }),
+        headers: {
+          name: name,
+          context: "device",
+          color: color,
+          device_id: deviceId as string,
+        },
       });
-      const data = await res.json();
-      if (data.error) {
-        console.log(data.error);
+      const { response, error } = await res.json();
+      if (error) {
+        console.log(error);
       }
-      const role = data?.role;
-      if (role) {
-        getAllowedRoles();
+      if (response) {
+        deviceRoles.set((prev) =>
+          prev.filter((role) => role.name !== response.name)
+        );
       }
     },
-    [getAllowedRoles]
+    [deviceId, deviceRoles]
   );
 
-  const roleHandler = useCallback(({ role, enabled }: { role: Role, enabled: boolean }) => {
-    if (enabled) {
-      allowRole({
-        name: role.name,
-        color: role.color
-      })
-    } else {
-      deleteAllowedRole({
-        name: role.name
-      })
-    }
-
-  }, [getAllowedRoles])
-
-
-
-  useDebounce(
-    () => {
-      setInput(input);
+  const deviceRoleHandler = useCallback(
+    ({ role, enabled }: { role: Role; enabled: boolean }) => {
+      if (enabled) {
+        saveRole({
+          name: role.name,
+          color: role.color,
+        });
+      } else {
+        deleteRole({
+          name: role.name,
+          color: role.color,
+        });
+      }
     },
-    500,
-    [input]
+    [deleteRole, saveRole]
   );
 
   useEffect(() => {
-    getAllowedRoles();
     getRoles();
-  }, [getAllowedRoles, getRoles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -164,7 +120,7 @@ export const RoleManagementModal = ({
         <ModalHeader>Device role management</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          {roles?.length > 0 && context === "manage" && (
+          {roles?.length > 0 && (
             <>
               <Box
                 borderRadius={"md"}
@@ -174,46 +130,66 @@ export const RoleManagementModal = ({
                 pt={3}
                 px={3}
               >
-                <chakra.span fontSize={"xs"} fontWeight={"bold"} color={'gray.400'}>
+                <chakra.span
+                  fontSize={"md"}
+                  fontWeight={"bold"}
+                  color={"gray.400"}
+                >
                   Allowed roles
                 </chakra.span>
                 <Divider />
                 <VStack spacing={1} my={1} mb={3}>
-                  {roles?.map((role: Role, index: number) => (
-                    <Tag
-                      key={index}
-                      variant="subtle"
-                      size={"sm"}
-                      bgColor={`${role.color}.200`}
-                      color={`${role.color}.700`}
-                      userSelect={"none"}
-                      w={'100%'}
-                      my={0.5}
-                      mx={0.5}
-                    >
-                      <FormControl
-                      onChange={(e) => {
-                        const target = e.target as HTMLInputElement
-                        roleHandler({
-                          role: role,
-                          enabled: target?.checked
-                        })
-                      }}>
-                        <HStack h={"100%"} w={"100%"} justifyContent={'space-between'} p={1}>
-                          <Tooltip label={role.name}>
-                            <TagLabel>{role.name}</TagLabel>
-                          </Tooltip>
-                          <Switch id={role.name} defaultChecked={device?.allowedRoles?.some(allowedRole => allowedRole?.name === role?.name)} />
-                        </HStack>
-                      </FormControl>
-                    </Tag>
-                  ))}
+                  {roles
+                    .get({ noproxy: true })
+                    ?.map((role: Role, index: number) => (
+                      <Tag
+                        key={index}
+                        variant="subtle"
+                        size={"sm"}
+                        bgColor={`${role.color}.200`}
+                        color={`${role.color}.700`}
+                        userSelect={"none"}
+                        w={"100%"}
+                        my={0.5}
+                        mx={0.5}
+                      >
+                        <FormControl
+                          onChange={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            deviceRoleHandler({
+                              role: role,
+                              enabled: target?.checked,
+                            });
+                          }}
+                        >
+                          <HStack
+                            h={"100%"}
+                            w={"100%"}
+                            justifyContent={"space-between"}
+                            p={1}
+                          >
+                            <Tooltip label={role.name}>
+                              <TagLabel>{role.name}</TagLabel>
+                            </Tooltip>
+                            <Switch
+                              id={role.name}
+                              isChecked={deviceRoles
+                                .get({ noproxy: true })
+                                ?.some(
+                                  (allowedRole) =>
+                                    allowedRole?.name === role?.name
+                                )}
+                            />
+                          </HStack>
+                        </FormControl>
+                      </Tag>
+                    ))}
                 </VStack>
               </Box>
             </>
           )}
 
-          {!rolesPresence && context === "manage" && (
+          {roles?.length <= 0 && (
             <HStack
               spacing={4}
               fontSize={"sm"}
@@ -228,7 +204,6 @@ export const RoleManagementModal = ({
               </chakra.span>
             </HStack>
           )}
-
         </ModalBody>
 
         <ModalFooter>
