@@ -5,5 +5,9 @@ html {
 }
 
 body {
-  font-family: 'Inter Variable', sans-serif;
+  font-family: "Inter Variable", sans-serif;
+}
+
+option {
+  font-family: "Inter Variable", sans-serif;
 }

@@ -1,6 +1,12 @@
 import * as mqtt from 'mqtt';
 import { Server } from 'socket.io';
 
+const handleMQTTMessage = (io: Server) => (mqttTopic: any, mqttMessage: Buffer) => {
+  const messageData = mqttMessage.toString();
+  console.log(`Received MQTT message on topic ${mqttTopic}: ${messageData}`);
+  io.emit('mqttMessage', { topic: mqttTopic, message: messageData });
+};
+
 const SocketHandler = (req: any, res: any) => {
   const { topics, topic, action, message } = JSON.parse(req.body);
 
@@ -20,7 +26,7 @@ const SocketHandler = (req: any, res: any) => {
         mqttClient.end();
       });
     } else {
-      // Handle other client-side actions, if needed
+      // Handle other actions if needed
     }
   } else {
     console.log('Socket is initializing');
@@ -40,18 +46,7 @@ const SocketHandler = (req: any, res: any) => {
       mqttClient.subscribe(topics);
     });
 
-    mqttClient.on('message', (mqttTopic: any, mqttMessage: Buffer) => {
-      const messageData = mqttMessage.toString();
-      console.log(`Received MQTT message on topic ${mqttTopic}: ${messageData}`);
-      io.emit('mqttMessage', { topic: mqttTopic, message: messageData });
-    });
-
-    // Handle client's subscribe request, if needed
-    io.on('connection', (socket) => {
-      socket.on('subscribe', (clientTopics) => {
-        mqttClient.subscribe(clientTopics);
-      });
-    });
+    mqttClient.on('message', handleMQTTMessage(io));
   }
 
   res.end();

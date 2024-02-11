@@ -1,11 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import io from 'socket.io-client';
 
-export const useMQTT = ({
-    topics, callback
+export const useMQTTSubscription = ({
+    callback,
+    topics
 }: {
-    topics?: string[],
-    callback: (e: any) => void
+    callback: (e: any) => void;
+    topics: string[];
 }) => {
     const subscribe = useCallback(async () => {
         await fetch("/api/socket", {
@@ -16,16 +17,9 @@ export const useMQTT = ({
         });
     }, [topics]);
 
-    const publish = useCallback(async (topic: string, message: string) => {
-        await fetch("/api/socket", {
-            method: "POST",
-            body: JSON.stringify({
-                topic,
-                message,
-                action: "publish"
-            })
-        });
-    }, []);
+    useEffect(() => {
+        subscribe();
+    }, [topics, subscribe]);
 
     useEffect(() => {
         const socket = io();
@@ -40,11 +34,5 @@ export const useMQTT = ({
                 socket.disconnect();
             }
         };
-    }, [callback]); // Removed subscribe from the dependency array
-
-    useEffect(() => {
-        subscribe();
-    }, [subscribe]);
-
-    return { publish }
+    }, [callback]);
 };

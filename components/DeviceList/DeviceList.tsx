@@ -26,19 +26,18 @@ import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
 import { useHookstate } from "@hookstate/core";
 import { Role } from "@models/Role";
 import { doorsGlobalState } from "@utils/globalStates";
-import { useMQTT } from "@utils/useMQTT";
+import { useMQTTPublish } from "@utils/useMQTTPublish";
+import { useMQTTSubscription } from "@utils/useMQTTSubscription";
 import { useCallback, useEffect, useState } from "react";
 import { FaLock, FaUserPlus } from "react-icons/fa6";
 import { TbWifi, TbWifiOff } from "react-icons/tb";
 
 export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
   const doors = useHookstate(doorsGlobalState);
-
   const [deviceId, setDeviceId] = useState("");
-
-  const { publish } = useMQTT({ callback: () => {} });
+  const [deviceStatus, setDeviceStatus] = useState<Record<string, string>>({});
+  const { publish } = useMQTTPublish();
 
   const getDevices = useCallback(async () => {
     const res = await fetch(`/api/database/getDevices`, {});
@@ -60,8 +59,6 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     [getDevices]
   );
 
-  const [deviceStatus, setDeviceStatus] = useState<Record<string, string>>({});
-
   const updateDeviceStatus = useCallback((deviceId: string, status: string) => {
     setDeviceStatus((prevStatus) => ({
       ...prevStatus,
@@ -77,6 +74,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         },
         "devices/heartbeat": () => {
           const { id } = JSON.parse(message);
+          console.log(id);
           updateDeviceStatus(id, "online");
         },
       }[topic];
@@ -86,7 +84,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     [getDevices, updateDeviceStatus]
   );
 
-  useMQTT({
+  useMQTTSubscription({
     topics: ["devices/heartbeat", "devices/register"] as string[],
     callback: (e) => {
       topicHandler({
@@ -181,10 +179,10 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                   </Button>
                   <Button
                     onClick={() => {
-                      publish(
-                        "devices/lock",
-                        `{"id": ${device.id}, "locked": ${device.locked}}`
-                      );
+                      publish({
+                        topics: ["devices/lock"],
+                        message: `{"id": ${device.id}, "locked": ${device.locked}}`,
+                      });
                       updateDevice({
                         args: {
                           device_id: device.id,
@@ -241,7 +239,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                         <chakra.span>Online</chakra.span>
                         <Box
                           css={{
-                            animation: `blink 3s infinite`,
+                            animation: `blink 2s infinite`,
                             "@keyframes blink": {
                               "0%": { opacity: 1 },
                               "50%": { opacity: 0.3 },
@@ -263,7 +261,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                         <chakra.span>Offline</chakra.span>
                         <TbWifiOff
                           style={{
-                            color: "red",
+                            color: "gray",
                             height: "20px",
                             width: "20px",
                           }}
