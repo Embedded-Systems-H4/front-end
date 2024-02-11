@@ -17,6 +17,7 @@ import {
   Tag,
   TagLabel,
   Tooltip,
+  VStack,
   chakra,
   useBreakpointValue,
   useDisclosure,
@@ -30,6 +31,7 @@ import { useMQTTPublish } from "@utils/useMQTTPublish";
 import { useMQTTSubscription } from "@utils/useMQTTSubscription";
 import { useCallback, useEffect, useState } from "react";
 import { FaLock, FaUserPlus } from "react-icons/fa6";
+import { LuSmartphoneNfc } from "react-icons/lu";
 import { TbWifi, TbWifiOff } from "react-icons/tb";
 
 export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
@@ -124,7 +126,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         }}
         deviceId={deviceId}
       />
-      <Accordion w={"100%"} allowMultiple>
+      <Accordion w={"100%"} allowMultiple defaultIndex={[0]}>
         {doors.get({ noproxy: true })?.map((device) => (
           <AccordionItem
             key={device.id}
@@ -351,6 +353,31 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                     </HStack>
                   </Stack>
                 )}
+
+                <Button
+                  bgColor={"gray.800"}
+                  color={"gray.400"}
+                  border={"1px"}
+                  borderColor={"gray.900"}
+                  onClick={() => {
+                    console.log("enabled write mode");
+                  }}
+                  _hover={{
+                    bgColor: "gray.900",
+                    color: "white",
+                    borderColor: "white",
+                  }}
+                >
+                  <VStack>
+                    <LuSmartphoneNfc
+                      style={{
+                        height: "28px",
+                        width: "28px",
+                      }}
+                    />
+                    <chakra.span fontSize={"xs"}>Write mode</chakra.span>
+                  </VStack>
+                </Button>
               </Stack>
             </AccordionPanel>
           </AccordionItem>
