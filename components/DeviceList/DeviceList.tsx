@@ -23,7 +23,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { DateElement } from "@components/Date/Date";
-import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
+import { DeviceRoleManagement } from "@components/Modals/DeviceRoleManagement";
 import { useHookstate } from "@hookstate/core";
 import { Role } from "@models/Role";
 import { doorsGlobalState } from "@utils/globalStates";
@@ -76,7 +76,6 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         },
         "devices/heartbeat": () => {
           const { id } = JSON.parse(message);
-          console.log(id);
           updateDeviceStatus(id, "online");
         },
       }[topic];
@@ -118,7 +117,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
 
   return (
     <>
-      <RoleManagementModal
+      <DeviceRoleManagement
         isOpen={isOpen}
         onClose={() => {
           onClose();

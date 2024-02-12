@@ -1,8 +1,8 @@
 import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
 import { DeviceList } from "@components/DeviceList";
 import Loading from "@components/Loading/Loading";
-import { RoleCreationModal } from "@components/Modals/RoleCreationModal";
-import { UserCreationModal } from "@components/Modals/UserCreationModal";
+import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
+import { UserManagementModal } from "@components/Modals/UserManagementModal";
 import { useMQTTPublish } from "@utils/useMQTTPublish";
 import type { NextPage } from "next";
 import { useCallback, useEffect, useState } from "react";
@@ -47,14 +47,14 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <UserCreationModal
+      <UserManagementModal
         isOpen={isUserModalOpen}
         onClose={onUserModalClose}
         updateCallback={() => {
           updateCallback(() => {});
         }}
       />
-      <RoleCreationModal
+      <RoleManagementModal
         isOpen={isRoleModalOpen}
         onClose={onRoleModalClose}
         updateCallback={() => {

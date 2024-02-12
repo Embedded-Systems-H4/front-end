@@ -17,18 +17,22 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
+
+    const { search, search_input } = req.headers
     async function getProfiles() {
         try {
             const db = database("MAIN");
             const collection = db.collection("profiles");
-
             const documentsCursor = collection.aggregate([
                 {
-                    $match: {
-                        status: 'active'
-                    }
+                    $match: search === "true" ? {
+                        "name": {
+                            $regex: new RegExp(`^${(search_input as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, "i")
+                        },
+                    } : { status: 'enabled' }
                 }
             ]);
+
 
             const profileList = await documentsCursor.toArray()
             if (profileList.length > 0) {

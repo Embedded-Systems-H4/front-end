@@ -19,7 +19,6 @@ export default async function handler(
 ) {
     const { device_id, locked } = req.headers
 
-    console.log(locked)
     async function updateDevice() {
         try {
             const db = database("MAIN");
