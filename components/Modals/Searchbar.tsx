@@ -10,7 +10,11 @@ import { useCallback, useState } from "react";
 import { IoSearch } from "react-icons/io5";
 import { useDebounce } from "react-use";
 
-export const Searchbar = () => {
+export const Searchbar = ({
+  setLoading,
+}: {
+  setLoading: (bool: boolean) => void;
+}) => {
   const profiles = useHookstate(profilesGlobalState);
   const [input, setInput] = useState<string | null>(null);
 
@@ -25,13 +29,20 @@ export const Searchbar = () => {
     const { response } = await res.json();
     if (response.length > 0) {
       profiles.set(response);
+    } else {
+      profiles.set([]);
     }
-  }, [input, profiles]);
+    setLoading(false);
+  }, [input, profiles, setLoading]);
 
   useDebounce(
     () => {
       setInput(input);
-      if (!input || input === "" || input.length < 3) return;
+      if (!input || input === "" || input.length < 3) {
+        profiles.set([]);
+        setLoading(false);
+        return;
+      }
       searchHandler();
     },
     500,
@@ -43,6 +54,7 @@ export const Searchbar = () => {
       <FormControl
         onChange={(e) => {
           const target = e.target as HTMLInputElement;
+          setLoading(true);
           setInput(target.value);
         }}
       >
