@@ -32,6 +32,7 @@ export const UserManagementModal = ({
   const [gender, setGender] = useState<"m" | "f" | null>(null);
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+
   const getProfiles = useCallback(async () => {
     const res = await fetch("/api/database/getProfiles", {});
     const { response } = await res.json();
@@ -64,6 +65,32 @@ export const UserManagementModal = ({
       }
     },
     [name, profiles, updateCallback]
+  );
+
+  const updateProfile = useCallback(
+    async ({ profile }: { profile: Profile }) => {
+      const res = await fetch(`/api/database/updateProfile`, {
+        method: "POST",
+        body: JSON.stringify({
+          profile: profile,
+        }),
+      });
+
+      const { error } = await res.json();
+      if (!error) {
+        profiles.set((previousProfiles) => {
+          if (previousProfiles.some((e) => e.name === profile.name)) {
+            return previousProfiles.map((e) =>
+              e.name === profile.name ? { ...e, ...profile } : e
+            );
+          } else {
+            updateCallback();
+            return [...previousProfiles, profile];
+          }
+        });
+      }
+    },
+    [profiles, updateCallback]
   );
 
   const profileCreationHandler = useCallback(() => {
@@ -100,6 +127,7 @@ export const UserManagementModal = ({
         <ModalBody>
           <Accordion allowToggle defaultIndex={[0]}>
             <UserManagement
+              updateProfile={updateProfile}
               profiles={profiles.get({ noproxy: true }) as Profile[]}
             />
             <UserCreation

@@ -1,4 +1,5 @@
 import {
+  Accordion,
   AccordionButton,
   AccordionIcon,
   AccordionItem,
@@ -6,22 +7,30 @@ import {
   Avatar,
   Badge,
   Box,
-  Button,
+  FormControl,
   HStack,
-  List,
-  ListItem,
+  Select,
   Skeleton,
   VStack,
 } from "@chakra-ui/react";
 import { chakra } from "@chakra-ui/system";
+import { useHookstate } from "@hookstate/core";
 import { Profile } from "@models/Profile";
+import { Role } from "@models/Role";
+import { rolesGlobalState } from "@utils/globalStates";
 import { AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { FaPen } from "react-icons/fa6";
 import { Searchbar } from "./Searchbar";
-export const UserManagement = ({ profiles }: { profiles: Profile[] }) => {
-  const [loading, setLoading] = useState(true);
 
+export const UserManagement = ({
+  profiles,
+  updateProfile,
+}: {
+  profiles: Profile[];
+  updateProfile: ({ profile }: { profile: Profile }) => Promise<void>;
+}) => {
+  const [loading, setLoading] = useState(false);
+  const roles = useHookstate(rolesGlobalState);
   return (
     <AccordionItem
       my={3}
@@ -39,102 +48,131 @@ export const UserManagement = ({ profiles }: { profiles: Profile[] }) => {
         <AccordionIcon />
       </AccordionButton>
       <AccordionPanel p={4} fontSize={"sm"}>
-        <VStack bgColor={"gray.700"} p={2} borderRadius={"md"} boxShadow={"md"}>
-          <Searchbar setLoading={setLoading} />
-          <List
-            overflowY={profiles.length > 0 ? "auto" : "hidden"}
+        <Searchbar setLoading={setLoading} />
+        <Box
+          bgColor={"gray.700"}
+          borderRadius={"md"}
+          mt={1}
+          p={profiles.length > 0 ? 2 : 0}
+        >
+          <Skeleton
+            isLoaded={!loading}
+            startColor="gray.400"
+            endColor="blackAlpha.900"
+            borderRadius={"md"}
             w={"100%"}
-            maxH={loading ? "70px" : "162px"}
-            top={!loading && profiles.length > 0 ? "162px" : "20"}
-            transition={"all .3s ease"}
           >
-            <AnimatePresence>
-              {profiles.length > 0 &&
-                profiles.map((profile) => {
-                  return (
-                    <ListItem
-                      key={profile.name}
-                      mr={profiles.length > 2 ? 2 : 0}
-                      role="group"
-                    >
-                      <Skeleton
-                        isLoaded={!loading}
-                        startColor="blue.900"
-                        endColor="blackAlpha.900"
+            <Accordion
+              w={"100%"}
+              allowToggle
+              overflowY={profiles.length > 0 ? "auto" : "hidden"}
+              maxH={loading ? "70px" : "162px"}
+              top={!loading && profiles.length > 0 ? "162px" : "20"}
+              transition={"all .3s ease"}
+              borderColor={"transparent"}
+            >
+              <AnimatePresence>
+                {profiles.length > 0 &&
+                  profiles.map((profile, index) => {
+                    return (
+                      <AccordionItem
+                        key={index}
+                        role="group"
+                        border={0}
+                        bgColor={"gray.600"}
                         borderRadius={"md"}
                         w={"100%"}
-                        bgColor={"gray.600"}
-                        p={2}
-                        mt={1}
-                        boxShadow={"md"}
-                        as={HStack}
+                        mt={index > 0 ? 1 : 0}
                       >
-                        <Avatar
-                          boxShadow={"md"}
-                          src="https://cdn2.iconfinder.com/data/icons/audio-16/96/user_avatar_profile_login_button_account_member-1024.png"
-                          name={profile.name}
-                          bgColor={"blue.400"}
-                        />
-                        <VStack
-                          w={"100%"}
-                          alignItems={"left"}
-                          ml={3}
-                          spacing={1}
-                        >
-                          <HStack>
-                            <chakra.span fontWeight="bold">
-                              {profile.name}
-                            </chakra.span>
-                            {/* {profile?.roles?.map((role: Role) => {
-                        return (
-                          <Badge
-                            key={role.name}
-                            ml="1"
-                            colorScheme={role.color}
-                          >
-                            {role.name}
-                          </Badge>
-                        );
-                      })} */}
-                            <Badge
-                              fontSize={"x-small"}
-                              key={"test"}
-                              ml="1"
-                              bgColor={"red.200"}
-                              color={"red.700"}
-                            >
-                              Developer
-                            </Badge>
+                        <AccordionButton>
+                          <HStack w={"100%"} fontSize={"sm"}>
+                            <Avatar
+                              boxShadow={"md"}
+                              src="https://cdn2.iconfinder.com/data/icons/audio-16/96/user_avatar_profile_login_button_account_member-1024.png"
+                              name={profile.name}
+                              bgColor={"blue.400"}
+                            />
+                            <VStack ml={2} w={"100%"}>
+                              <HStack w={"100%"}>
+                                <chakra.span fontWeight="bold">
+                                  {profile.name}
+                                </chakra.span>
+                                {profile?.roles &&
+                                  profile?.roles?.map((role: Role) => {
+                                    return (
+                                      <Badge
+                                        fontSize={"x-small"}
+                                        key={role.name}
+                                        ml="1"
+                                        bgColor={"blackAlpha.600"}
+                                        color={"white"}
+                                      >
+                                        {role?.name}
+                                      </Badge>
+                                    );
+                                  })}
+                              </HStack>
+                              <HStack w={"100%"}>
+                                <chakra.span color={"gray.400"}>
+                                  {profile.email}
+                                </chakra.span>
+                              </HStack>
+                            </VStack>
+                            <AccordionIcon />
                           </HStack>
-                          <chakra.span color={"gray.400"}>
-                            {profile.email}
-                          </chakra.span>
-                          {/* <Collapse in={true}></Collapse> */}
-                        </VStack>
-
-                        <Button
-                          cursor={"default"}
-                          size={"md"}
-                          opacity={0}
-                          _groupHover={{
-                            opacity: 1,
-                            cursor: "pointer",
-                          }}
-                        >
-                          <FaPen
-                            style={{
-                              width: "22px",
-                              height: "22px",
-                            }}
-                          />
-                        </Button>
-                      </Skeleton>
-                    </ListItem>
-                  );
-                })}
-            </AnimatePresence>
-          </List>
-        </VStack>
+                        </AccordionButton>
+                        <AccordionPanel>
+                          <VStack spacing={1}>
+                            <FormControl>
+                              <Select
+                                onChange={(e) => {
+                                  const target =
+                                    e.currentTarget as HTMLSelectElement;
+                                  updateProfile({
+                                    profile: {
+                                      ...profile,
+                                      roles: target.value
+                                        ? [
+                                            {
+                                              name: target.value as string,
+                                              color: "",
+                                            },
+                                          ]
+                                        : [],
+                                    },
+                                  });
+                                }}
+                                placeholder={"Select a role"}
+                                defaultValue={profile?.roles?.[0]?.name}
+                                bgColor={"gray.700"}
+                                borderColor={"gray.500"}
+                                borderRadius={"md"}
+                                size={"xs"}
+                                sx={{
+                                  "> option": {
+                                    background: "gray.700",
+                                    color: "white",
+                                  },
+                                }}
+                              >
+                                {roles.get({ noproxy: true })?.map((role) => {
+                                  return (
+                                    <option key={role.name + "_" + role.color}>
+                                      {role.name}
+                                    </option>
+                                  );
+                                })}
+                              </Select>
+                            </FormControl>
+                          </VStack>
+                        </AccordionPanel>
+                      </AccordionItem>
+                    );
+                  })}
+              </AnimatePresence>
+            </Accordion>
+          </Skeleton>
+        </Box>
       </AccordionPanel>
     </AccordionItem>
   );

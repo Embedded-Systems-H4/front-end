@@ -57,6 +57,10 @@ export const Searchbar = ({
           setLoading(true);
           setInput(target.value);
         }}
+        bgColor={"gray.700"}
+        borderRadius={"md"}
+        boxShadow={"md"}
+        p={2}
       >
         <InputGroup
           borderRadius={"md"}

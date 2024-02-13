@@ -25,7 +25,7 @@
         "./theme/*"
       ],
       "@assets/*": [
-        "./assets/*"
+        "components/assets/*"
       ],
       "@components/*": [
         "./components/*"
