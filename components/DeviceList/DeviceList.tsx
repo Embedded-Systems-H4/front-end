@@ -23,6 +23,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { DateElement } from "@components/Date/Date";
+import { CardLinkModal } from "@components/Modals/CardLinkModal";
 import { DeviceRoleManagement } from "@components/Modals/DeviceRoleManagement";
 import { useHookstate } from "@hookstate/core";
 import { Role } from "@models/Role";
@@ -35,6 +36,11 @@ import { LuSmartphoneNfc } from "react-icons/lu";
 import { TbWifi, TbWifiOff } from "react-icons/tb";
 
 export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
+  const {
+    isOpen: isWriteModalOpen,
+    onOpen: onWriteModalOpen,
+    onClose: onWriteModalClose,
+  } = useDisclosure();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const doors = useHookstate(doorsGlobalState);
   const [deviceId, setDeviceId] = useState("");
@@ -117,6 +123,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
 
   return (
     <>
+      <CardLinkModal isOpen={isWriteModalOpen} onClose={onWriteModalClose} />
       <DeviceRoleManagement
         isOpen={isOpen}
         onClose={() => {
@@ -358,9 +365,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                   color={"gray.400"}
                   border={"1px"}
                   borderColor={"gray.900"}
-                  onClick={() => {
-                    console.log("enabled write mode");
-                  }}
+                  onClick={onWriteModalOpen}
                   _hover={{
                     bgColor: "gray.900",
                     color: "white",
