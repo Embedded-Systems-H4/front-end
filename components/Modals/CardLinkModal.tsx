@@ -45,8 +45,9 @@ export const CardLinkModal = ({
       });
       onClose();
       startCountdown();
+      profiles.set([]);
     },
-    [deviceId, onClose, publish, startCountdown]
+    [deviceId, onClose, profiles, publish, startCountdown]
   );
 
   return (

@@ -9,7 +9,7 @@ export const useMQTTSubscription = ({
     topics: string[];
 }) => {
     const subscribe = useCallback(async () => {
-        await fetch("/api/socket", {
+        await fetch("/api/socket/subscribe", {
             method: "POST",
             body: JSON.stringify({
                 topics: topics as string[],
@@ -25,12 +25,12 @@ export const useMQTTSubscription = ({
         const socket = io();
 
         if (socket) {
-            socket.on("mqttMessage", callback);
+            socket.on("subscription", callback);
         }
 
         return () => {
             if (socket) {
-                socket.off("mqttMessage");
+                socket.off("subscription");
                 socket.disconnect();
             }
         };
