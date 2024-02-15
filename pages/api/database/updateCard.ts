@@ -1,7 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { database } from './database';
-import { getNextSequence } from './globalCounters';
 
 class CustomError extends Error {
     code: number;
@@ -18,27 +17,32 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { profile } = JSON.parse(req.body)
+    const { cardId, profileId } = JSON.parse(req.body)
 
-    async function saveProfile() {
+    async function updateCard() {
         try {
             const db = database("MAIN");
-            const collection = db.collection('profiles');
-
-            await collection.insertOne({
-                ...profile,
-                id: await getNextSequence("id"),
-                birthday: new Date(profile.birthday)
-            })
-
+            const collection = db.collection('cards');
+            await collection.updateOne(
+                {
+                    "id": cardId
+                },
+                {
+                    "$set": {
+                        ...(typeof profileId !== "undefined" && { "profileId": profileId }),
+                        "updatedAt": new Date()
+                    }
+                },
+                { upsert: true }
+            )
         } catch (error) {
             console.log(error);
-            return new CustomError("Unable to save profile", 500)
+            return new CustomError("Unable to update card", 500)
         }
     }
 
     try {
-        const response = await saveProfile()
+        const response = await updateCard()
         if (response instanceof CustomError) {
             res.status(response.code).json({
                 error: { message: response.message, code: response.code }
@@ -50,6 +54,6 @@ export default async function handler(
         }
     } catch (error) {
         console.log(error);
-        return new CustomError("Unable to save profile", 500)
+        return new CustomError("Unable to set update card", 500)
     }
 }

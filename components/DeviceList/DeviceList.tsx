@@ -26,6 +26,7 @@ import { DateElement } from "@components/Date/Date";
 import { CardLinkModal } from "@components/Modals/CardLinkModal";
 import { DeviceRoleManagement } from "@components/Modals/DeviceRoleManagement";
 import { useHookstate } from "@hookstate/core";
+import { Door } from "@models/Door";
 import { Role } from "@models/Role";
 import { doorsGlobalState } from "@utils/globalStates";
 import { useMQTTPublish } from "@utils/useMQTTPublish";
@@ -34,6 +35,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FaLock, FaUserPlus } from "react-icons/fa6";
 import { LuSmartphoneNfc } from "react-icons/lu";
 import { TbWifi, TbWifiOff } from "react-icons/tb";
+import { WriteModeOverlay } from "./WriteModeOverlay";
 
 export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
   const {
@@ -41,6 +43,9 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     onOpen: onWriteModalOpen,
     onClose: onWriteModalClose,
   } = useDisclosure();
+
+  const [deviceOverlayStates, setDeviceOverlayStates] = useState<any>({});
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const doors = useHookstate(doorsGlobalState);
   const [deviceId, setDeviceId] = useState("");
@@ -67,6 +72,41 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     [getDevices]
   );
 
+  const updateCard = useCallback(
+    async ({
+      deviceId,
+      profileId,
+      cardId,
+    }: {
+      deviceId: string;
+      profileId: string;
+      cardId: string;
+    }) => {
+      if (!deviceId) return;
+      if (cardId && profileId) {
+        const res = await fetch("/api/database/updateCard", {
+          method: "POST",
+          body: JSON.stringify({
+            deviceId,
+            profileId,
+            cardId,
+          }),
+        });
+        const { error } = await res.json();
+        if (!error) {
+          console.log("Card updated!");
+        }
+      } else {
+        console.log("No cardId found");
+      }
+      setDeviceOverlayStates({
+        ...deviceOverlayStates,
+        [deviceId]: false,
+      });
+    },
+    [deviceOverlayStates]
+  );
+
   const updateDeviceStatus = useCallback((deviceId: string, status: string) => {
     setDeviceStatus((prevStatus) => ({
       ...prevStatus,
@@ -81,18 +121,31 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
           getDevices();
         },
         "devices/heartbeat": () => {
-          const { id } = JSON.parse(message);
-          updateDeviceStatus(id, "online");
+          const { deviceId } = JSON.parse(message);
+          updateDeviceStatus(deviceId, "online");
+          console.log(message);
+        },
+        "devices/linkupdate": () => {
+          const { deviceId, profileId, cardId } = JSON.parse(message);
+          updateCard({
+            deviceId,
+            profileId,
+            cardId,
+          });
         },
       }[topic];
 
       onTopic?.();
     },
-    [getDevices, updateDeviceStatus]
+    [getDevices, updateCard, updateDeviceStatus]
   );
 
   useMQTTSubscription({
-    topics: ["devices/heartbeat", "devices/register"] as string[],
+    topics: [
+      "devices/heartbeat",
+      "devices/register",
+      "devices/linkupdate",
+    ] as string[],
     callback: (e) => {
       topicHandler({
         message: e.message,
@@ -123,7 +176,17 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
 
   return (
     <>
-      <CardLinkModal isOpen={isWriteModalOpen} onClose={onWriteModalClose} />
+      <CardLinkModal
+        isOpen={isWriteModalOpen}
+        onClose={onWriteModalClose}
+        startCountdown={() =>
+          setDeviceOverlayStates({
+            ...deviceOverlayStates,
+            [deviceId]: true,
+          })
+        }
+        deviceId={deviceId}
+      />
       <DeviceRoleManagement
         isOpen={isOpen}
         onClose={() => {
@@ -149,6 +212,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
             </AccordionButton>
             <AccordionPanel pb={4} fontSize={"sm"}>
               <Stack
+                position={"relative"}
                 p={2}
                 bgColor={"gray.600"}
                 borderRadius={"md"}
@@ -157,6 +221,24 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                   lg: "row",
                 }}
               >
+                {deviceOverlayStates?.[device.id] && (
+                  <WriteModeOverlay
+                    device={device as Door}
+                    isOpen={deviceOverlayStates[device.id]}
+                    onOpen={() => {
+                      setDeviceOverlayStates({
+                        ...deviceOverlayStates,
+                        [device.id]: true,
+                      });
+                    }}
+                    onClose={() => {
+                      setDeviceOverlayStates({
+                        ...deviceOverlayStates,
+                        [device.id]: false,
+                      });
+                    }}
+                  />
+                )}
                 <Stack
                   width={isSmallScreen ? "100%" : "auto"}
                   justifyContent={isSmallScreen ? "space-between" : "center"}
@@ -188,8 +270,8 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                   <Button
                     onClick={() => {
                       publish({
-                        topics: ["devices/lock"],
-                        message: `{"id": ${device.id}, "locked": ${device.locked}}`,
+                        topic: "devices/lock",
+                        message: `${deviceId}, ${device.locked}`,
                       });
                       updateDevice({
                         args: {
@@ -365,7 +447,10 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                   color={"gray.400"}
                   border={"1px"}
                   borderColor={"gray.900"}
-                  onClick={onWriteModalOpen}
+                  onClick={() => {
+                    setDeviceId(device.id);
+                    onWriteModalOpen();
+                  }}
                   _hover={{
                     bgColor: "gray.900",
                     color: "white",

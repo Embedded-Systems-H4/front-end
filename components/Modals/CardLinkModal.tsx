@@ -15,21 +15,40 @@ import {
 } from "@chakra-ui/react";
 import { chakra } from "@chakra-ui/system";
 import { useHookstate } from "@hookstate/core";
+import { Profile } from "@models/Profile";
 import { Role } from "@models/Role";
 import { profilesGlobalState } from "@utils/globalStates";
+import { useMQTTPublish } from "@utils/useMQTTPublish";
 import { AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Searchbar } from "./Searchbar";
 
 export const CardLinkModal = ({
   isOpen,
   onClose,
+  deviceId,
+  startCountdown,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  startCountdown: () => void;
+  deviceId: string;
 }) => {
   const [loading, setLoading] = useState(false);
   const profiles = useHookstate(profilesGlobalState);
+  const { publish } = useMQTTPublish();
+  const onClickHandler = useCallback(
+    ({ profile }: { profile: Profile }) => {
+      publish({
+        topic: "devices/link",
+        message: `${deviceId},${profile.id},${profile.name}`,
+      });
+      onClose();
+      startCountdown();
+    },
+    [deviceId, onClose, publish, startCountdown]
+  );
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
@@ -99,6 +118,9 @@ export const CardLinkModal = ({
                             </HStack>
                           </VStack>
                           <Button
+                            onClick={() => {
+                              onClickHandler({ profile: profile as Profile });
+                            }}
                             fontSize={"xs"}
                             cursor={"pointer"}
                             _hover={{

@@ -7,46 +7,63 @@ const handleMQTTMessage = (io: Server) => (mqttTopic: any, mqttMessage: Buffer) 
   io.emit('mqttMessage', { topic: mqttTopic, message: messageData });
 };
 
-const SocketHandler = (req: any, res: any) => {
+// MQTT Connection
+let mqttClient: mqtt.MqttClient;
+
+const connectToMQTT = async (): Promise<boolean> => {
+  const options: mqtt.IClientOptions = {
+    username: process.env.MQTT_USERNAME,
+    password: process.env.MQTT_PASSWORD,
+    port: parseInt(process.env.MQTT_PORT as string),
+    clientId: "front-end"
+  };
+
+  mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST}`, options);
+
+  const connectPromise = new Promise<boolean>(resolve => {
+    mqttClient.on('connect', () => {
+      resolve(true);
+    });
+
+    mqttClient.on('error', () => {
+      resolve(false);
+    });
+  });
+
+  return await connectPromise;
+};
+
+const reconnect = async (): Promise<boolean> => {
+  let isConnected = await connectToMQTT();
+
+  while (!isConnected) {
+    isConnected = await connectToMQTT();
+  }
+
+  return isConnected;
+};
+
+const SocketHandler = async (req: any, res: any) => {
   const { topics, topic, action, message } = JSON.parse(req.body);
-
   if (res.socket.server.io) {
-    if (action === 'publish' && topic && message) {
-      // Handle client's publish request
-      const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST}`, {
-        username: process.env.MQTT_USERNAME,
-        password: process.env.MQTT_PASSWORD,
-        port: parseInt(process.env.MQTT_PORT as string),
-        clientId: "front-end"
-      });
-
-      mqttClient.on('connect', () => {
-        mqttClient.publish(topic, message);
-        console.log(`Published MQTT message on topic ${topic}: ${message}`);
-        mqttClient.end();
-      });
-    } else {
-      // Handle other actions if needed
+    if (action === "publish") {
+      if (topic && message) {
+        if (await reconnect()) {
+          mqttClient.publish(topic, message)
+          console.log(`Published MQTT message on topic ${topic}: ${message}`);
+          reconnect()
+        }
+      }
     }
   } else {
     console.log('Socket is initializing');
     const io = new Server(res.socket.server);
     res.socket.server.io = io;
-
-    // MQTT Connection
-    const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST}`, {
-      username: process.env.MQTT_USERNAME,
-      password: process.env.MQTT_PASSWORD,
-      port: parseInt(process.env.MQTT_PORT as string),
-      clientId: "front-end"
-    });
-
-    mqttClient.on('connect', () => {
-      console.log('MQTT connected');
+    if (await reconnect()) {
       mqttClient.subscribe(topics);
-    });
+      mqttClient.on('message', handleMQTTMessage(io));
 
-    mqttClient.on('message', handleMQTTMessage(io));
+    }
   }
 
   res.end();

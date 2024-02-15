@@ -3,17 +3,17 @@ import { useCallback } from 'react';
 
 export const useMQTTPublish = () => {
     const publish = useCallback(async ({
-        topics, message
+        topic, message
     }: {
-        topics: string[];
+        topic: string;
         message: string;
     }) => {
         await fetch("/api/socket", {
             method: "POST",
             body: JSON.stringify({
-                topics,
+                action: "publish",
+                topic,
                 message,
-                action: "publish"
             })
         });
     }, []);
