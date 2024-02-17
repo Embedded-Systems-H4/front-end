@@ -25,7 +25,7 @@ export const RoleManagementModal = ({
   onClose: () => void;
   updateCallback: () => void;
   context: "manage" | "create";
-  deviceId?: string;
+  deviceId?: number;
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 

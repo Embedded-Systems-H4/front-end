@@ -29,7 +29,7 @@ export default async function handler(
                 },
                 {
                     "$set": {
-                        ...(typeof profileId !== "undefined" && { "profileId": parseInt(profileId) }),
+                        ...(typeof profileId !== "undefined" && { "profileId": profileId }),
                         "updatedAt": new Date()
                     }
                 },

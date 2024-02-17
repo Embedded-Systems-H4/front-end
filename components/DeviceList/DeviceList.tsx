@@ -48,8 +48,8 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const doors = useHookstate(doorsGlobalState);
-  const [deviceId, setDeviceId] = useState("");
-  const [deviceStatus, setDeviceStatus] = useState<Record<string, string>>({});
+  const [deviceId, setDeviceId] = useState<number>(0);
+  const [deviceStatus, setDeviceStatus] = useState<Record<number, string>>({});
   const { publish } = useMQTTPublish();
 
   const getDevices = useCallback(async () => {
@@ -63,9 +63,10 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
   const updateDevice = useCallback(
     async ({ args }: { args: any }) => {
       await fetch(`/api/database/updateDevice`, {
-        headers: {
+        method: "POST",
+        body: JSON.stringify({
           ...args,
-        },
+        }),
       });
       getDevices();
     },
@@ -78,9 +79,9 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
       profileId,
       cardId,
     }: {
-      deviceId: string;
-      profileId: string;
-      cardId: string;
+      deviceId: number;
+      profileId: number;
+      cardId: number;
     }) => {
       if (!deviceId) return;
       if (cardId && profileId) {
@@ -107,7 +108,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     [deviceOverlayStates]
   );
 
-  const updateDeviceStatus = useCallback((deviceId: string, status: string) => {
+  const updateDeviceStatus = useCallback((deviceId: number, status: string) => {
     setDeviceStatus((prevStatus) => ({
       ...prevStatus,
       [deviceId]: status,
@@ -121,7 +122,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
           getDevices();
         },
         "devices/heartbeat": () => {
-          const { deviceId } = JSON.parse(message);
+          const { deviceId }: { deviceId: number } = JSON.parse(message);
           updateDeviceStatus(deviceId, "online");
           console.log(message);
         },
@@ -157,7 +158,8 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
   useEffect(() => {
     const heartbeatTimeout = setTimeout(() => {
       for (const deviceId in deviceStatus) {
-        updateDeviceStatus(deviceId, "offline");
+        const id = parseInt(deviceId);
+        updateDeviceStatus(id, "offline");
       }
     }, 4000);
 
@@ -271,11 +273,11 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                     onClick={() => {
                       publish({
                         topic: "devices/lock",
-                        message: `${deviceId}, ${device.locked}`,
+                        message: `${device.id}, ${device.locked}`,
                       });
                       updateDevice({
                         args: {
-                          device_id: device.id,
+                          deviceId: device.id,
                           locked: device.locked ? false : true,
                         },
                       });

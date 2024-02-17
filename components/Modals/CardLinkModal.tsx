@@ -32,7 +32,7 @@ export const CardLinkModal = ({
   isOpen: boolean;
   onClose: () => void;
   startCountdown: () => void;
-  deviceId: string;
+  deviceId: number;
 }) => {
   const [loading, setLoading] = useState(false);
   const profiles = useHookstate(profilesGlobalState);

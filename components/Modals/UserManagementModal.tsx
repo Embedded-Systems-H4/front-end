@@ -24,7 +24,7 @@ export const UserManagementModal = ({
   isOpen: boolean;
   onClose: () => void;
   updateCallback: () => void;
-  deviceId?: string;
+  deviceId?: number;
 }) => {
   const profiles = useHookstate(profilesGlobalState);
 

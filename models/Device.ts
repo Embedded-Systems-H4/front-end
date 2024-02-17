@@ -1,6 +1,6 @@
 
 export interface Device {
-    id: string,
+    id: number,
     type?: string,
     name?: string,
     status?: "online" | "offline",

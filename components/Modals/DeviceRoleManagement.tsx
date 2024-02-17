@@ -29,7 +29,7 @@ export const DeviceRoleManagement = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  deviceId?: string;
+  deviceId?: number;
 }) => {
   const deviceRoles = useHookstate(deviceRolesGlobalState);
   const roles = useHookstate(rolesGlobalState);

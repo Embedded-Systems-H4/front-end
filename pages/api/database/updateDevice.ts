@@ -17,19 +17,20 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { device_id, locked } = req.headers
+    const { deviceId, locked } = JSON.parse(req.body)
 
+    console.log(locked, deviceId)
     async function updateDevice() {
         try {
             const db = database("MAIN");
             const collection = db.collection('devices');
             await collection.updateOne(
                 {
-                    "id": device_id
+                    "id": deviceId
                 },
                 {
                     "$set": {
-                        ...(typeof locked !== "undefined" && { "locked": locked === "true" ? true : false })
+                        ...(typeof locked !== "undefined" && { "locked": locked ? true : false })
                     }
                 }
             )
