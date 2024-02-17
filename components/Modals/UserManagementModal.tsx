@@ -155,6 +155,7 @@ export const UserManagementModal = ({
               setGender(null);
               setBirthday(null);
               setEmail(null);
+              profiles.set([]);
             }}
           >
             Close

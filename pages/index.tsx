@@ -37,7 +37,7 @@ const Home: NextPage = () => {
   const onZombieLockdown = useCallback(() => {
     publish({
       topic: "devices/lock",
-      message: `{"id": all, "locked": true}`,
+      message: `all, true`,
     });
   }, [publish]);
 

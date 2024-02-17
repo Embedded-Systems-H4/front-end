@@ -1,5 +1,5 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { ObjectId } from 'mongodb';
+import { Profile } from '@models/Profile';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { database } from './database';
 
@@ -18,14 +18,14 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { profile } = JSON.parse(req.body)
+    const { profile }: { profile: Profile } = JSON.parse(req.body)
 
     async function updateProfile() {
         try {
             const db = database("MAIN");
             const collection = db.collection('profiles');
             await collection.updateOne({
-                "_id": new ObjectId(`${profile._id}`)
+                "id": profile.id
             }, {
                 $set: {
                     ...(typeof profile.name !== "undefined" && { name: profile.name }),
