@@ -17,11 +17,39 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
+
+    const { aggregated } = JSON.parse(req.body)
     async function getLogs() {
         try {
             const db = database("MAIN");
             const collection = db.collection('logs');
-            const documentsCursor = collection.find({})
+            const documentsCursor = aggregated ? collection.aggregate([
+                {
+                    $sort: {
+                        "timestamp": -1
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "profiles",
+                        localField: "id",
+                        foreignField: "authorId",
+                        as: "author"
+                    }
+                },
+                {
+                    $unwind: "$author"
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        type: "$type",
+                        role: "$role",
+                        timestamp: "$timestamp",
+                        author: "$author"
+                    }
+                }
+            ]) : collection.find({})
             const logList = await documentsCursor.toArray()
             if (logList.length > 0) {
                 return logList;

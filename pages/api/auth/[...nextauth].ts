@@ -1,6 +1,6 @@
-import NextAuth, { Account, Profile, User } from "next-auth"
+import NextAuth, { Account, Profile, User } from "next-auth";
 import { AdapterUser } from "next-auth/adapters";
-import GithubProvider from "next-auth/providers/github"
+import GithubProvider from "next-auth/providers/github";
 
 export const authOptions = {
     providers: [
@@ -20,7 +20,7 @@ export const authOptions = {
             profile?: Profile
         }) {
             const allowedEmails: string[] = [
-                "danimane4info@gmail.com",
+                "a.daniel.manea@gmail.com",
                 "vados1789@gmail.com"
             ]
             if (allowedEmails.includes(user?.email as string)) {
@@ -72,7 +72,7 @@ export const authOptions = {
         //     secure: true
         // }
         // }
-      }
+    }
 };
 
 export default NextAuth(authOptions);
