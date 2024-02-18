@@ -18,7 +18,7 @@ export default async function handler(
     res: NextApiResponse
 ) {
 
-    const { aggregated } = JSON.parse(req.body)
+    const { aggregated, type } = JSON.parse(req.body)
     async function getLogs() {
         try {
             const db = database("MAIN");
@@ -33,12 +33,12 @@ export default async function handler(
                     $lookup: {
                         from: "profiles",
                         localField: "id",
-                        foreignField: "authorId",
-                        as: "author"
+                        foreignField: "profileId",
+                        as: "profile"
                     }
                 },
                 {
-                    $unwind: "$author"
+                    $unwind: "$profile"
                 },
                 {
                     $project: {
@@ -46,7 +46,7 @@ export default async function handler(
                         type: "$type",
                         role: "$role",
                         timestamp: "$timestamp",
-                        author: "$author"
+                        profile: "$profile"
                     }
                 }
             ]) : collection.find({})
