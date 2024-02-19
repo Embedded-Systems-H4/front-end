@@ -25,30 +25,76 @@ export default async function handler(
             const collection = db.collection('logs');
             const documentsCursor = aggregated ? collection.aggregate([
                 {
-                    $sort: {
-                        "timestamp": -1
-                    }
+                    $lookup: {
+                        from: "profiles",
+                        localField: "profileId",
+                        foreignField: "id",
+                        as: "profile",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$profile",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "cards",
+                        localField: "cardId",
+                        foreignField: "id",
+                        as: "card",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$card",
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $lookup: {
                         from: "profiles",
-                        localField: "id",
-                        foreignField: "authorId",
-                        as: "author"
-                    }
+                        localField: "card.profileId",
+                        foreignField: "id",
+                        as: "cardProfile",
+                    },
                 },
                 {
-                    $unwind: "$author"
+                    $unwind: {
+                        path: "$cardProfile",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "devices",
+                        localField: "deviceId",
+                        foreignField: "id",
+                        as: "device",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$device",
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $project: {
-                        _id: 0,
-                        type: "$type",
-                        role: "$role",
-                        timestamp: "$timestamp",
-                        author: "$author"
-                    }
-                }
+                        profile: {
+                            $ifNull: ["$profile", "$cardProfile"]
+                        },
+
+                        cardId: 1,
+                        card: 1,
+                        deviceId: 1,
+                        device: 1,
+                        access: 1,
+                        type: 1,
+                        timestamp: 1
+                    },
+                },
             ]) : collection.find({})
             const logList = await documentsCursor.toArray()
             if (logList.length > 0) {
