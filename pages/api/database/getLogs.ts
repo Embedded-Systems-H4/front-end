@@ -24,7 +24,77 @@ export default async function handler(
             const db = database("MAIN");
             const collection = db.collection('logs');
             const documentsCursor = aggregated ? collection.aggregate([
+                {
+                    $lookup: {
+                        from: "profiles",
+                        localField: "profileId",
+                        foreignField: "id",
+                        as: "profile",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$profile",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "cards",
+                        localField: "cardId",
+                        foreignField: "id",
+                        as: "card",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$card",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "profiles",
+                        localField: "card.profileId",
+                        foreignField: "id",
+                        as: "cardProfile",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$cardProfile",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "devices",
+                        localField: "deviceId",
+                        foreignField: "id",
+                        as: "device",
+                    },
+                },
+                {
+                    $unwind: {
+                        path: "$device",
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+                {
+                    $project: {
+                        profile: {
+                            $ifNull: ["$profile", "$cardProfile"]
+                        },
 
+                        cardId: 1,
+                        card: 1,
+                        deviceId: 1,
+                        device: 1,
+                        access: 1,
+                        type: 1,
+                        timestamp: 1
+                    },
+                },
             ]) : collection.find({})
             const logList = await documentsCursor.toArray()
             if (logList.length > 0) {
