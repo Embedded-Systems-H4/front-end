@@ -36,10 +36,11 @@ export const DeviceRoleManagement = ({
 
   const getRoles = useCallback(async () => {
     const res = await fetch("/api/database/getRoles", {
-      headers: {
-        device_id: deviceId as string,
+      method: "POST",
+      body: JSON.stringify({
+        device_id: deviceId as number,
         context: "device",
-      },
+      }),
     });
     const { response } = await res.json();
     if (response) {
@@ -51,12 +52,12 @@ export const DeviceRoleManagement = ({
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/saveRole`, {
         method: "POST",
-        headers: {
+        body: JSON.stringify({
           name: name,
           context: "device",
           color: color,
-          device_id: deviceId as string,
-        },
+          device_id: deviceId as number,
+        }),
       });
       const { error } = await res.json();
       if (!error) {
@@ -70,12 +71,12 @@ export const DeviceRoleManagement = ({
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/deleteRole`, {
         method: "POST",
-        headers: {
+        body: JSON.stringify({
           name: name,
           context: "device",
           color: color,
-          device_id: deviceId as string,
-        },
+          device_id: deviceId as number,
+        }),
       });
       const { response, error } = await res.json();
       if (error) {

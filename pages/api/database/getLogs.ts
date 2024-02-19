@@ -18,43 +18,19 @@ export default async function handler(
     res: NextApiResponse
 ) {
 
-    const { aggregated, type } = JSON.parse(req.body)
+    const { aggregated } = JSON.parse(req.body)
     async function getLogs() {
         try {
             const db = database("MAIN");
             const collection = db.collection('logs');
             const documentsCursor = aggregated ? collection.aggregate([
-                {
-                    $sort: {
-                        "timestamp": -1
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "profiles",
-                        localField: "id",
-                        foreignField: "profileId",
-                        as: "profile"
-                    }
-                },
-                {
-                    $unwind: "$profile"
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        type: "$type",
-                        role: "$role",
-                        timestamp: "$timestamp",
-                        profile: "$profile"
-                    }
-                }
+
             ]) : collection.find({})
             const logList = await documentsCursor.toArray()
             if (logList.length > 0) {
                 return logList;
             } else {
-                return new CustomError("No logs found", 404)
+                return []
             }
         } catch (error) {
             console.log(error);

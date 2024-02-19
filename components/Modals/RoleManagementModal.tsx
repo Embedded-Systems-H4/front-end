@@ -35,7 +35,10 @@ export const RoleManagementModal = ({
   const [input, setInput] = useState<string | null>(null);
 
   const getRoles = useCallback(async () => {
-    const res = await fetch("/api/database/getRoles", {});
+    const res = await fetch("/api/database/getRoles", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
     const { response } = await res.json();
     if (response) {
       roles.set(response);
@@ -46,10 +49,10 @@ export const RoleManagementModal = ({
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/saveRole`, {
         method: "POST",
-        headers: {
+        body: JSON.stringify({
           name: name,
           color: color,
-        },
+        }),
       });
       const { error } = await res.json();
       if (!error) {
@@ -75,10 +78,10 @@ export const RoleManagementModal = ({
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/deleteRole`, {
         method: "POST",
-        headers: {
+        body: JSON.stringify({
           name: name,
           color: color,
-        },
+        }),
       });
       const { response, error } = await res.json();
       if (error) {

@@ -1,15 +1,4 @@
-import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Divider,
-  HStack,
-  Tag,
-  VStack,
-  chakra,
-} from "@chakra-ui/react";
+import { HStack, Tag, VStack, chakra } from "@chakra-ui/react";
 import { DateElement } from "@components/Date/Date";
 import { Log } from "@models/Log";
 import { NextPage } from "next";
@@ -37,80 +26,102 @@ const Logs: NextPage = () => {
 
   return (
     <VStack ml={{ base: 0, md: 60 }} p="4">
-      <HStack w={"100%"} h={"100%"}>
-        <VStack justifyContent={"flex-start"} w={"100%"}>
-          <Accordion w={"100%"} allowToggle defaultIndex={[0]} fontSize={"sm"}>
-            {logs?.map((log, index) => {
-              return (
-                <AccordionItem
-                  key={index}
-                  borderRadius={"md"}
-                  border={"1px"}
-                  borderColor={"gray.600"}
-                  my={2}
-                >
-                  <AccordionButton>
-                    <HStack w={"100%"} fontSize={"sm"}>
-                      {log.type === "role_creation" && (
-                        <>
-                          <chakra.span>Role</chakra.span>
-                          <Tag
-                            size={"sm"}
-                            color={`${log.role?.color}.700`}
-                            bgColor={`${log.role?.color}.200`}
-                          >
-                            {log?.role?.name}
-                          </Tag>
-                          <chakra.span>created</chakra.span>
-                        </>
-                      )}
-                      {log.type === "role_deletion" && (
-                        <>
-                          <chakra.span>Role</chakra.span>
-                          <Tag
-                            size={"sm"}
-                            color={`${log.role?.color}.700`}
-                            bgColor={`${log.role?.color}.200`}
-                          >
-                            {log?.role?.name}
-                          </Tag>
-                          <chakra.span>deleted</chakra.span>
-                        </>
-                      )}
-                      <DateElement
-                        localeIdentifier="en-UK"
-                        timestamp={log.timestamp}
-                        type="relative"
-                        withTooltip
-                      />
-                    </HStack>
-                    <AccordionIcon />
-                  </AccordionButton>
-                  <AccordionPanel>
+      <VStack
+        overflow={"auto"}
+        justifyContent={"flex-start"}
+        w={"100%"}
+        fontSize={"sm"}
+        h={"85vh"}
+        overflowY={"scroll"}
+        overflowX={"auto"}
+        paddingX="2px"
+        style={{
+          overflowY: "auto",
+          scrollbarGutter: "stable both-edges",
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--chakra-ui-colors-gray-300) transparent",
+        }}
+      >
+        {logs?.map((log, index) => {
+          console.log(log);
+          return (
+            <HStack
+              key={index}
+              w={"100%"}
+              borderRadius={"md"}
+              border={"1px"}
+              borderColor={"gray.600"}
+              p={2}
+            >
+              <HStack w={"100%"} fontSize={"sm"}>
+                {log.type === "role_creation" && (
+                  <>
+                    <chakra.span>Role</chakra.span>
+                    <Tag
+                      size={"sm"}
+                      color={`${log.role?.color}.700`}
+                      bgColor={`${log.role?.color}.200`}
+                    >
+                      {log?.role?.name}
+                    </Tag>
+                    <chakra.span>created</chakra.span>
+                  </>
+                )}
+                {log.type === "role_deletion" && (
+                  <>
+                    <chakra.span>Role</chakra.span>
+                    <Tag
+                      size={"sm"}
+                      color={`${log.role?.color}.700`}
+                      bgColor={`${log.role?.color}.200`}
+                    >
+                      {log?.role?.name}
+                    </Tag>
+                    <chakra.span>deleted</chakra.span>
+                  </>
+                )}
+                {log.type === "device_register" && (
+                  <>
+                    <chakra.span>Device</chakra.span>
+                    <chakra.span>{log?.device?.name}</chakra.span>
+                    <chakra.span>connected</chakra.span>
+                  </>
+                )}
+                {log.type === "device_access_update" && (
+                  <>
+                    <chakra.span>Access</chakra.span>
+                    <chakra.span>{log?.profile?.name}</chakra.span>
+                    <chakra.span>{log?.access}</chakra.span>
+                  </>
+                )}
+                <DateElement
+                  localeIdentifier="en-UK"
+                  timestamp={log.timestamp}
+                  type="relative"
+                  withTooltip
+                />
+              </HStack>
+              {/* <AccordionPanel>
                     <HStack bgColor={"gray.600"} p={2} borderRadius={"md"}>
                       <VStack
                         bgColor={"gray.800"}
                         p={2}
                         borderRadius={"md"}
-                        border={"1px"}
-                        borderColor={"gray.500"}
                         color={"gray.400"}
                       >
                         <chakra.span fontWeight={"bold"} color={"white"}>
                           Author
                         </chakra.span>
                         <Divider />
-                        <chakra.span>{log.author?.name}</chakra.span>
-                        <chakra.span>{log.author?.email}</chakra.span>
+                        <chakra.span>{log?.profile?.name}</chakra.span>
+                        <chakra.span>{log?.profile?.email}</chakra.span>
                       </VStack>
                     </HStack>
-                  </AccordionPanel>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </VStack>
-      </HStack>
+                  </AccordionPanel> */}
+            </HStack>
+          );
+        })}
+      </VStack>
     </VStack>
   );
 };

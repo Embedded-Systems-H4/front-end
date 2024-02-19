@@ -17,7 +17,7 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { name, color, context, device_id } = req.headers
+    const { name, color, context, device_id } = JSON.parse(req.body)
 
     async function saveRole() {
         try {

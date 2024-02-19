@@ -12,5 +12,6 @@ export interface Log {
     cardId?: number
     card?: Card
     role?: Role
+    access?: string
     timestamp: Date
 }

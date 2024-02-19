@@ -17,7 +17,7 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { context, device_id } = req.headers
+    const { context, device_id } = JSON.parse(req.body)
     async function getRoles() {
         try {
             const db = database("MAIN");
@@ -30,7 +30,7 @@ export default async function handler(
             ]);
             const roleList = await documentsCursor.toArray()
             if (roleList.length > 0) {
-                return context === "device" ? roleList[0].allowedRoles : roleList
+                return context === "device" ? roleList[0]?.allowedRoles : roleList
             } else {
                 return []
             }
