@@ -20,6 +20,8 @@ export const DateElement = ({
     year: "numeric",
     month: "long",
     day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   // Short Date (e.g., "10-19-23")
@@ -46,11 +48,7 @@ export const DateElement = ({
     );
   return (
     <>
-      {type === "long" && (
-        <Tooltip label={withTooltip ? `${shortDate}:${onlyHour}` : null}>
-          <chakra.span>{fullDate}</chakra.span>
-        </Tooltip>
-      )}
+      {type === "long" && <chakra.span>{fullDate}</chakra.span>}
       {type === "short" && (
         <Tooltip label={withTooltip ? `${shortDate}:${onlyHour}` : null}>
           <chakra.span>{shortDate}</chakra.span>
