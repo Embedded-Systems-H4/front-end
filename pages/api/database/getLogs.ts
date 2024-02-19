@@ -18,7 +18,7 @@ export default async function handler(
     res: NextApiResponse
 ) {
 
-    const { aggregated } = JSON.parse(req.body)
+    const { aggregated, type } = JSON.parse(req.body)
     async function getLogs() {
         try {
             const db = database("MAIN");
