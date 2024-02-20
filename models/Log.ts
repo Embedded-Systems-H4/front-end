@@ -4,7 +4,7 @@ import { Profile } from "./Profile"
 import { Role } from "./Role"
 
 export interface Log {
-    type: "role_creation" | "role_deletion" | "role_assignation" | "role_removal" | "device_access_update" | "device_register"
+    type: "role_creation" | "role_deletion" | "user_role_set" | "user_role_unset" | "device_role_set" | "device_role_unset" | "device_access_update" | "device_register" | "device_online" | "device_offline" | "card_link"
     profileId?: number
     profile?: Profile
     deviceId?: number
