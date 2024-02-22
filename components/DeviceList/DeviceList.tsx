@@ -27,6 +27,7 @@ import { CardLinkModal } from "@components/Modals/CardLinkModal";
 import { DeviceRoleManagement } from "@components/Modals/DeviceRoleManagement";
 import { useHookstate } from "@hookstate/core";
 import { Door } from "@models/Door";
+import { Log } from "@models/Log";
 import { Role } from "@models/Role";
 import { doorsGlobalState } from "@utils/globalStates";
 import { useMQTTPublish } from "@utils/useMQTTPublish";
@@ -72,6 +73,15 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
     },
     [getDevices]
   );
+
+  const saveLog = useCallback(async ({ log }: { log: Log }) => {
+    const res = await fetch("/api/database/saveLog", {
+      method: "POST",
+      body: JSON.stringify({
+        log,
+      }),
+    });
+  }, []);
 
   const updateCard = useCallback(
     async ({
@@ -127,18 +137,28 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
           console.log(message);
         },
         "devices/linkupdate": () => {
+          console.log(message);
           const { deviceId, profileId, cardId } = JSON.parse(message);
           updateCard({
             deviceId,
             profileId,
             cardId,
           });
+          saveLog({
+            log: {
+              timestamp: new Date(),
+              type: "card_link",
+              cardId,
+              deviceId,
+              profileId,
+            },
+          });
         },
       }[topic];
 
       onTopic?.();
     },
-    [getDevices, updateCard, updateDeviceStatus]
+    [getDevices, saveLog, updateCard, updateDeviceStatus]
   );
 
   useMQTTSubscription({
