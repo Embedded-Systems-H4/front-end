@@ -39,8 +39,8 @@ export const ActionBadge = ({ log }: { log: Log }) => {
     case "device_access_update":
       return (
         <Badge
-          color={`${log?.access === "denied" ? "red" : "lime"}.700`}
-          bgColor={`${log?.access === "denied" ? "red" : "lime"}.200`}
+          color={`${log?.access === "denied" ? "red" : "green"}.700`}
+          bgColor={`${log?.access === "denied" ? "red" : "green"}.200`}
         >
           ACCESS {log?.access}
         </Badge>
@@ -49,6 +49,12 @@ export const ActionBadge = ({ log }: { log: Log }) => {
       return (
         <Badge color={`blue.700`} bgColor={`blue.200`}>
           DEVICE CONNECTED
+        </Badge>
+      );
+    case "card_link":
+      return (
+        <Badge color={`blue.700`} bgColor={`blue.200`}>
+          CARD LINKED
         </Badge>
       );
     default:

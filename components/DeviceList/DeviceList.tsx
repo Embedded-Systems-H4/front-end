@@ -134,7 +134,6 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         "devices/heartbeat": () => {
           const { deviceId }: { deviceId: number } = JSON.parse(message);
           updateDeviceStatus(deviceId, "online");
-          console.log(message);
         },
         "devices/linkupdate": () => {
           console.log(message);

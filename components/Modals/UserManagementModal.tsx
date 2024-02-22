@@ -10,12 +10,14 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import { useHookstate } from "@hookstate/core";
+import { Log } from "@models/Log";
 import { Profile } from "@models/Profile";
 import { profilesGlobalState } from "@utils/globalStates";
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "react-use";
 import { UserCreation } from "./UserCreation";
 import { UserManagement } from "./UserManagement";
+
 export const UserManagementModal = ({
   isOpen,
   onClose,
@@ -61,6 +63,18 @@ export const UserManagementModal = ({
             updateCallback();
             return [...previousProfiles, profile];
           }
+        });
+
+        const log: Log = {
+          timestamp: new Date(),
+          type: "user_creation",
+          profileId: profile?.id
+        }
+        await fetch(`/api/database/saveLog`, {
+          method: "POST",
+          body: JSON.stringify({
+            log: log,
+          }),
         });
       }
     },

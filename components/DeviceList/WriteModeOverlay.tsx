@@ -14,14 +14,21 @@ export const WriteModeOverlay = ({
   onClose: () => void;
 }) => {
   const [countdown, setCountdown] = useState(10);
+  const [confirmationText, setConfirmationText] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && countdown > 0) {
       setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
+    } else {
+      setTimeout(() => {
+        onClose();
+        setConfirmationText(null);
+      }, 3000);
+      setConfirmationText("Card linked successfully");
     }
-  }, [countdown, isOpen, onOpen]);
+  }, [countdown, isOpen, onClose, onOpen]);
 
   return (
     <>
@@ -40,13 +47,21 @@ export const WriteModeOverlay = ({
         }}
         justifyContent={"center"}
       >
-        <chakra.span fontSize={"lg"}>Awaiting card</chakra.span>
-        <HStack pos={"relative"} justifyContent={"center"}>
-          <chakra.span fontSize={"sm"} color={"gray.500"} pos={"absolute"}>
-            {countdown}
-          </chakra.span>
-          <Spinner color="blue.500" thickness="5px" size="lg" speed="1s" />
-        </HStack>
+        {!confirmationText ? (
+          <>
+            <chakra.span fontSize={"lg"}>Awaiting card</chakra.span>
+            <HStack pos={"relative"} justifyContent={"center"}>
+              <chakra.span fontSize={"sm"} color={"gray.500"} pos={"absolute"}>
+                {countdown}
+              </chakra.span>
+              <Spinner color="blue.500" thickness="5px" size="lg" speed="1s" />
+            </HStack>
+          </>
+        ) : (
+          <>
+            <chakra.span fontSize={"lg"}>{confirmationText}</chakra.span>
+          </>
+        )}
       </HStack>
     </>
   );

@@ -17,13 +17,21 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-
     const { aggregated } = JSON.parse(req.body)
+    const { limit } = req.query;
     async function getLogs() {
         try {
             const db = database("MAIN");
             const collection = db.collection('logs');
             const documentsCursor = aggregated ? collection.aggregate([
+                {
+                    $sort: {
+                        timestamp: -1
+                    },
+                },
+                {
+                    $limit: parseInt(limit as string) || 20
+                },
                 {
                     $lookup: {
                         from: "profiles",
