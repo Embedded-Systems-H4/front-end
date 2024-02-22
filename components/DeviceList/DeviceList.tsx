@@ -107,6 +107,15 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         if (!error) {
           console.log("Card updated!");
         }
+        saveLog({
+          log: {
+            timestamp: new Date(),
+            type: "card_link",
+            cardId,
+            deviceId,
+            profileId,
+          },
+        });
       } else {
         console.log("No cardId found");
       }
@@ -115,7 +124,7 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
         [deviceId]: false,
       });
     },
-    [deviceOverlayStates]
+    [deviceOverlayStates, saveLog]
   );
 
   const updateDeviceStatus = useCallback((deviceId: number, status: string) => {
@@ -143,21 +152,12 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
             profileId,
             cardId,
           });
-          saveLog({
-            log: {
-              timestamp: new Date(),
-              type: "card_link",
-              cardId,
-              deviceId,
-              profileId,
-            },
-          });
         },
       }[topic];
 
       onTopic?.();
     },
-    [getDevices, saveLog, updateCard, updateDeviceStatus]
+    [getDevices, updateCard, updateDeviceStatus]
   );
 
   useMQTTSubscription({
