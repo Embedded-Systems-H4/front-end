@@ -25,7 +25,8 @@ export default async function handler(
             const collection = db.collection('logs');
 
             await collection.insertOne({
-                ...log
+                ...log,
+                timestamp: new Date(log.timestamp)
             })
 
         } catch (error) {
