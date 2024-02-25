@@ -14,6 +14,12 @@ export const ActionBadge = ({ log }: { log: Log }) => {
           {log?.type === "role_deletion" ? " DELETED" : " CREATED"}
         </Badge>
       );
+    case "user_creation":
+      return (
+        <Badge color={`blue.700`} bgColor={`blue.200`}>
+          USER CREATED
+        </Badge>
+      );
     case "user_role_set":
     case "user_role_unset":
       return (
@@ -43,6 +49,18 @@ export const ActionBadge = ({ log }: { log: Log }) => {
           bgColor={`${log?.access === "denied" ? "red" : "green"}.200`}
         >
           ACCESS {log?.access}
+        </Badge>
+      );
+    case "device_lock":
+      return (
+        <Badge color={`red.700`} bgColor={`red.200`}>
+          DOOR LOCKED
+        </Badge>
+      );
+    case "device_unlock":
+      return (
+        <Badge color={`green.700`} bgColor={`green.200`}>
+          DOOR UNLOCKED
         </Badge>
       );
     case "device_register":

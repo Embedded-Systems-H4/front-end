@@ -1,7 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { database } from './database';
-import { getNextSequence } from './globalCounters';
 
 class CustomError extends Error {
     code: number;
@@ -18,27 +17,28 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const { log } = JSON.parse(req.body)
-
-    async function saveLog() {
+    async function updateDevice() {
         try {
             const db = database("MAIN");
-            const collection = db.collection('logs');
-
-            await collection.insertOne({
-                ...log,
-                ...((log.type === "user_creation" && typeof log.profileId === "undefined") && { profileId: await getNextSequence("id") - 1 }),
-                timestamp: new Date(log.timestamp)
-            })
-
+            const collection = db.collection('devices');
+            await collection.updateMany(
+                {
+                    "type": "door"
+                },
+                {
+                    "$set": {
+                        "locked": true
+                    }
+                }
+            )
         } catch (error) {
             console.log(error);
-            return new CustomError("Unable to save log", 500)
+            return new CustomError("Unable to set lock status", 500)
         }
     }
 
     try {
-        const response = await saveLog()
+        const response = await updateDevice()
         if (response instanceof CustomError) {
             res.status(response.code).json({
                 error: { message: response.message, code: response.code }
@@ -50,6 +50,6 @@ export default async function handler(
         }
     } catch (error) {
         console.log(error);
-        return new CustomError("Unable to save log", 500)
+        return new CustomError("Unable to set lock status", 500)
     }
 }

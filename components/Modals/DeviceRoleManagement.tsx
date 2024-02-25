@@ -18,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { chakra } from "@chakra-ui/system";
 import { useHookstate } from "@hookstate/core";
+import { Log } from "@models/Log";
 import { Role } from "@models/Role";
 import { deviceRolesGlobalState, rolesGlobalState } from "@utils/globalStates";
 import { useCallback, useEffect } from "react";
@@ -48,6 +49,15 @@ export const DeviceRoleManagement = ({
     }
   }, [deviceId, deviceRoles]);
 
+  const saveLog = useCallback(async ({ log }: { log: Log }) => {
+    const res = await fetch("/api/database/saveLog", {
+      method: "POST",
+      body: JSON.stringify({
+        log,
+      }),
+    });
+  }, []);
+
   const saveRole = useCallback(
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/saveRole`, {
@@ -62,9 +72,17 @@ export const DeviceRoleManagement = ({
       const { error } = await res.json();
       if (!error) {
         deviceRoles.merge([{ name, color }]);
+        saveLog({
+          log: {
+            timestamp: new Date(),
+            type: "device_role_set",
+            role: { name, color },
+            deviceId: deviceId,
+          },
+        });
       }
     },
-    [deviceId, deviceRoles]
+    [deviceId, deviceRoles, saveLog]
   );
 
   const deleteRole = useCallback(
@@ -86,9 +104,18 @@ export const DeviceRoleManagement = ({
         deviceRoles.set((prev) =>
           prev.filter((role) => role.name !== response.name)
         );
+
+        saveLog({
+          log: {
+            timestamp: new Date(),
+            type: "device_role_unset",
+            role: { name, color },
+            deviceId: deviceId,
+          },
+        });
       }
     },
-    [deviceId, deviceRoles]
+    [deviceId, deviceRoles, saveLog]
   );
 
   const deviceRoleHandler = useCallback(

@@ -1,4 +1,10 @@
-import { Button, HStack, VStack, useDisclosure } from "@chakra-ui/react";
+import {
+  Button,
+  HStack,
+  VStack,
+  chakra,
+  useDisclosure,
+} from "@chakra-ui/react";
 import { DeviceList } from "@components/DeviceList";
 import Loading from "@components/Loading/Loading";
 import { RoleManagementModal } from "@components/Modals/RoleManagementModal";
@@ -34,11 +40,17 @@ const Home: NextPage = () => {
 
   const { publish } = useMQTTPublish();
 
-  const onZombieLockdown = useCallback(() => {
+  const [zombieMode, setZombieMode] = useState(false);
+  const onZombieLockdown = useCallback(async () => {
+    setZombieMode(!zombieMode);
     publish({
       topic: "devices/lock",
-      message: `all, true`,
+      message: `"all", false`,
     });
+    await fetch("/api/database/lockAll", {
+      method: "POST",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publish]);
 
   if (!isHydrated) {
@@ -83,9 +95,13 @@ const Home: NextPage = () => {
                   }}
                   onClick={() => {
                     onZombieLockdown();
+                    setZombieMode(!zombieMode);
                   }}
                 >
-                  Zombie lockdown
+                  <HStack>
+                    <chakra.span>Zombie lockdown</chakra.span>
+                    <chakra.span opacity={0}>{zombieMode}</chakra.span>
+                  </HStack>
                 </Button>
               </HStack>
               <HStack w={"50%"} justifyContent={"right"}>

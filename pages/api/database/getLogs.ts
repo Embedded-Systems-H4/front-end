@@ -100,6 +100,7 @@ export default async function handler(
                         device: 1,
                         access: 1,
                         type: 1,
+                        role: 1,
                         timestamp: 1
                     },
                 },

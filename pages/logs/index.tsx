@@ -6,7 +6,7 @@ import {
   Th,
   Thead,
   Tr,
-  VStack
+  VStack,
 } from "@chakra-ui/react";
 import { LogTableRow } from "@components/LogTableRow/LogTableRow";
 import { Log } from "@models/Log";
@@ -18,10 +18,10 @@ import { BsArrowDownCircleFill } from "react-icons/bs";
 const Logs: NextPage = () => {
   const [logs, setLogs] = useState<Log[]>();
 
-  const  {query} = useRouter();
-  const  router = useNavRouter();
-  const limit = query?.limit || 10
-  
+  const { query } = useRouter();
+  const router = useNavRouter();
+  const limit = query?.limit || 10;
+
   const getLogs = useCallback(async () => {
     const res = await fetch(`/api/database/getLogs?limit=${limit}`, {
       method: "POST",
@@ -36,7 +36,7 @@ const Logs: NextPage = () => {
   }, [limit]);
 
   useEffect(() => {
-    if(!limit) {
+    if (!limit) {
       return;
     }
     getLogs();
@@ -61,6 +61,7 @@ const Logs: NextPage = () => {
           <Tbody
             overflow={"auto"}
             justifyContent={"flex-start"}
+            bgColor={"gray.700"}
             w={"100%"}
             fontSize={"sm"}
             overflowY={"scroll"}
@@ -79,17 +80,17 @@ const Logs: NextPage = () => {
           </Tbody>
         </Table>
       </TableContainer>
-      <Button justifyContent={'center'} my={10}
-        onClick={()=> router.push(`?limit=${parseInt(limit as string) + 10}`)}
+      <Button
+        justifyContent={"center"}
+        my={10}
+        onClick={() => router.push(`?limit=${parseInt(limit as string) + 10}`)}
       >
-      <BsArrowDownCircleFill
-          style={
-        {
-
-          width: "30px",
-          height: "30px"
-        }
-      }/>
+        <BsArrowDownCircleFill
+          style={{
+            width: "30px",
+            height: "30px",
+          }}
+        />
       </Button>
     </VStack>
   );

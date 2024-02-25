@@ -5,6 +5,9 @@ import { FaUserXmark } from "react-icons/fa6";
 export const ProfileCell = ({ log }: { log: Log }) => {
   switch (log?.type) {
     case "device_access_update":
+    case "user_creation":
+    case "user_role_set":
+    case "user_role_unset":
     case "card_link":
       return (
         <>

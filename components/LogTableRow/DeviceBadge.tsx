@@ -7,6 +7,8 @@ export const DeviceBadge = ({ log }: { log: Log }) => {
   switch (log?.type) {
     case "device_online":
     case "device_offline":
+    case "device_lock":
+    case "device_unlock":
     case "device_role_set":
     case "device_role_unset":
     case "device_access_update":

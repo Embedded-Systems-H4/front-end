@@ -301,6 +301,13 @@ export const DeviceList = ({ onCallback }: { onCallback: () => void }) => {
                           locked: device.locked ? false : true,
                         },
                       });
+                      saveLog({
+                        log: {
+                          timestamp: new Date(),
+                          type: device.locked ? "device_unlock" : "device_lock",
+                          deviceId: device.id,
+                        },
+                      });
                     }}
                     width={isSmallScreen ? "50%" : "auto"}
                     justifyContent={"center"}

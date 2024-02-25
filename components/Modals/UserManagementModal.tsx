@@ -68,8 +68,7 @@ export const UserManagementModal = ({
         const log: Log = {
           timestamp: new Date(),
           type: "user_creation",
-          profileId: profile?.id
-        }
+        };
         await fetch(`/api/database/saveLog`, {
           method: "POST",
           body: JSON.stringify({

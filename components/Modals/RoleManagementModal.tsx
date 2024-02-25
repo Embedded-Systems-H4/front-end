@@ -10,6 +10,7 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import { useHookstate } from "@hookstate/core";
+import { Log } from "@models/Log";
 import { Role } from "@models/Role";
 import { deviceRolesGlobalState, rolesGlobalState } from "@utils/globalStates";
 import { useCallback, useEffect, useState } from "react";
@@ -45,6 +46,15 @@ export const RoleManagementModal = ({
     }
   }, [roles]);
 
+  const saveLog = useCallback(async ({ log }: { log: Log }) => {
+    const res = await fetch("/api/database/saveLog", {
+      method: "POST",
+      body: JSON.stringify({
+        log,
+      }),
+    });
+  }, []);
+
   const saveRole = useCallback(
     async ({ name, color }: { name: string; color: string }) => {
       const res = await fetch(`/api/database/saveRole`, {
@@ -69,9 +79,17 @@ export const RoleManagementModal = ({
             return [...previousRoles, newRole];
           }
         });
+
+        saveLog({
+          log: {
+            timestamp: new Date(),
+            type: "role_creation",
+            role: newRole,
+          },
+        });
       }
     },
-    [roles, updateCallback]
+    [roles, saveLog, updateCallback]
   );
 
   const deleteRole = useCallback(
@@ -93,9 +111,16 @@ export const RoleManagementModal = ({
           prev.filter((role) => role.name !== response.name)
         );
         updateCallback();
+        saveLog({
+          log: {
+            timestamp: new Date(),
+            type: "role_deletion",
+            role: { name: name, color: color },
+          },
+        });
       }
     },
-    [deviceRoles, roles, updateCallback]
+    [deviceRoles, roles, saveLog, updateCallback]
   );
 
   useDebounce(

@@ -26,7 +26,7 @@ export const WriteModeOverlay = ({
         onClose();
         setConfirmationText(null);
       }, 3000);
-      setConfirmationText("Card linked successfully");
+      setConfirmationText("No card scanned in time.");
     }
   }, [countdown, isOpen, onClose, onOpen]);
 
